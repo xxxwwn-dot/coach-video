@@ -159,6 +159,11 @@
             cursor: pointer; outline: none; height: 30px;
         }
         .mini-speed option { background: #1f2937; }
+        .mini-btn.clear-btn {
+            background: #7f1d1d; border-color: #991b1b; color: #fca5a5;
+            font-size: 15px;
+        }
+        .mini-btn.clear-btn:active { background: #991b1b; }
 
         /* ── Seek bar ── */
         .panel-seek-bar {
@@ -313,6 +318,7 @@
                 <button class="mini-btn" onclick="stepPanelFrame(1,1)" title="+1f">▶</button>
                 <button class="mini-btn" onclick="stepPanelFrame(1,5)" title="+5f">⏭</button>
                 <div style="flex:1"></div>
+                <button class="mini-btn clear-btn" onclick="clearPanelDraw(1)" title="描画を一括クリア">🗑</button>
                 <select class="mini-speed" onchange="setPanelSpeed(1,this.value)" title="再生速度">
                     <option value="0.1">0.1x</option>
                     <option value="0.25">0.25x</option>
@@ -356,6 +362,7 @@
                 <button class="mini-btn" onclick="stepPanelFrame(2,1)" title="+1f">▶</button>
                 <button class="mini-btn" onclick="stepPanelFrame(2,5)" title="+5f">⏭</button>
                 <div style="flex:1"></div>
+                <button class="mini-btn clear-btn" onclick="clearPanelDraw(2)" title="描画を一括クリア">🗑</button>
                 <select class="mini-speed" onchange="setPanelSpeed(2,this.value)" title="再生速度">
                     <option value="0.1">0.1x</option>
                     <option value="0.25">0.25x</option>
@@ -722,9 +729,14 @@ function undoDraw() {
 }
 
 function clearDraw() {
-    const p = activePanel, canvas = document.getElementById('canvas'+p);
+    clearPanelDraw(activePanel);
+}
+
+function clearPanelDraw(p) {
+    const canvas = document.getElementById('canvas'+p);
     canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
     ds[p].history = [];
+    activePanel = p;
     showToast(`パネル${p===1?'A':'B'}の描画をクリア`);
 }
 
