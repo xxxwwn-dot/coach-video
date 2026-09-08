@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>コーチビデオ</title>
+
+    <!-- ── PWA / Apple Home Screen ── -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="コーチビデオ">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#1f2937">
+    <!-- Inline manifest (standalone mode, landscape) -->
+    <link rel="manifest" href="data:application/json,%7B%22name%22%3A%22%E3%82%B3%E3%83%BC%E3%83%81%E3%83%93%E3%83%87%E3%82%AA%22%2C%22short_name%22%3A%22%E3%82%B3%E3%83%BC%E3%83%81%E3%83%93%E3%83%87%E3%82%AA%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23111827%22%2C%22theme_color%22%3A%22%231f2937%22%2C%22orientation%22%3A%22landscape%22%2C%22start_url%22%3A%22.%22%7D">
+    <!-- App icon: baseball-themed SVG as data URI -->
+    <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxOTIgMTkyIj48cmVjdCB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgcng9IjQwIiBmaWxsPSIjMWYyOTM3Ii8+PHRleHQgeD0iOTYiIHk9IjEzMCIgZm9udC1zaXplPSI5NiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+4pq+77iPPC90ZXh0Pjwvc3ZnPg==">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            background: #111827;
+            color: #f3f4f6;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* ── Header ── */
+        #header {
+            background: #1f2937;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid #374151;
+            flex-shrink: 0;
+            min-height: 52px;
+        }
+        #header h1 { font-size: 16px; font-weight: 700; color: #f87171; letter-spacing: 0.5px; white-space: nowrap; }
+
+        .mode-btn {
+            background: #374151;
+            border: 1px solid #4b5563;
+            color: #9ca3af;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .mode-btn.active { background: #ef4444; border-color: #ef4444; color: white; }
+        .hdr-spacer { flex: 1; }
+        .hdr-hint { font-size: 11px; color: #4b5563; white-space: nowrap; }
+
+        /* ── Main ── */
+        #main { flex: 1; display: flex; flex-direction: row; overflow: hidden; min-height: 0; }
+
+        /* ── Panels ── */
+        #panels-container { flex: 1; display: flex; gap: 4px; padding: 4px; overflow: hidden; min-width: 0; }
+
+        .video-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            min-width: 0;
+        }
+
+        .panel-label-bar {
+            background: #1f2937;
+            padding: 3px 8px;
+            font-size: 11px;
+            color: #6b7280;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+        .panel-label-bar .lbl { font-weight: 700; color: #9ca3af; }
+        .panel-label-bar .filename { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .panel-reload-btn {
+            background: none;
+            border: 1px solid #374151;
+            color: #6b7280;
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .panel-reload-btn:hover { border-color: #6b7280; color: #9ca3af; }
+
+        .panel-video-wrapper {
+            flex: 1;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000;
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        .panel-video { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
+
+        .panel-canvas {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            cursor: crosshair;
+            touch-action: none;
+        }
+
+        .temp-canvas {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+        }
+
+        /* Drop zone */
+        .drop-zone {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.9);
+            cursor: pointer;
+            z-index: 10;
+            gap: 10px;
+        }
+        .drop-zone.hidden { display: none; }
+        .drop-zone-icon { font-size: 44px; }
+        .drop-zone-text { font-size: 14px; color: #9ca3af; }
+        .load-video-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-size: 15px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        /* Seek / time bar */
+        .panel-seek-bar {
+            background: #1f2937;
+            padding: 5px 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+        .seek-bar {
+            flex: 1;
+            height: 4px;
+            -webkit-appearance: none;
+            background: #374151;
+            border-radius: 2px;
+            cursor: pointer;
+            outline: none;
+        }
+        .seek-bar::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px; height: 14px;
+            background: #ef4444;
+            border-radius: 50%;
+        }
+        .time-disp {
+            font-size: 11px;
+            color: #6b7280;
+            min-width: 90px;
+            text-align: right;
+            font-family: monospace;
+        }
+
+        /* ── Right Sidebar ── */
+        #sidebar {
+            width: 66px;
+            background: #1f2937;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 6px 4px;
+            gap: 4px;
+            border-left: 1px solid #374151;
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+        #sidebar::-webkit-scrollbar { width: 3px; }
+        #sidebar::-webkit-scrollbar-thumb { background: #374151; border-radius: 2px; }
+
+        .sec-label {
+            font-size: 9px;
+            color: #4b5563;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 4px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .tool-btn {
+            width: 52px; height: 52px;
+            background: #374151;
+            border: 1px solid #4b5563;
+            border-radius: 10px;
+            color: #d1d5db;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            gap: 1px;
+            transition: all 0.15s;
+            flex-shrink: 0;
+        }
+        .tool-btn .tlbl { font-size: 9px; color: #6b7280; }
+        .tool-btn.active { background: #ef4444; border-color: #ef4444; color: white; }
+        .tool-btn.active .tlbl { color: rgba(255,255,255,0.8); }
+        .tool-btn:active { transform: scale(0.92); }
+
+        .color-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+        .color-dot {
+            width: 24px; height: 24px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        .color-dot.active { border-color: white; transform: scale(1.2); }
+
+        .divider { width: 100%; height: 1px; background: #374151; margin: 3px 0; }
+
+        .brush-wrap { width: 54px; }
+        .brush-slider {
+            width: 100%;
+            height: 3px;
+            -webkit-appearance: none;
+            background: #374151;
+            border-radius: 2px;
+            cursor: pointer;
+            outline: none;
+        }
+        .brush-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px; height: 12px;
+            background: #ef4444;
+            border-radius: 50%;
+        }
+
+        /* ── Bottom bar ── */
+        #bottom-bar {
+            background: #1f2937;
+            padding: 6px 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border-top: 1px solid #374151;
+            flex-shrink: 0;
+            min-height: 58px;
+        }
+
+        .ctrl-btn {
+            background: #374151;
+            border: 1px solid #4b5563;
+            color: #d1d5db;
+            width: 42px; height: 42px;
+            border-radius: 8px;
+            font-size: 17px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s;
+            flex-shrink: 0;
+        }
+        .ctrl-btn:active { background: #4b5563; transform: scale(0.92); }
+        .ctrl-btn.big {
+            background: #ef4444;
+            border-color: #ef4444;
+            color: white;
+            width: 50px; height: 50px;
+            font-size: 22px;
+            border-radius: 12px;
+        }
+        .ctrl-btn.big:active { background: #dc2626; }
+
+        .speed-select {
+            background: #374151;
+            border: 1px solid #4b5563;
+            color: #d1d5db;
+            padding: 5px 6px;
+            border-radius: 8px;
+            font-size: 12px;
+            cursor: pointer;
+            outline: none;
+            min-width: 70px;
+        }
+        .speed-select option { background: #1f2937; }
+
+        .bar-spacer { flex: 1; }
+
+        .sync-label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 12px;
+            color: #6b7280;
+            cursor: pointer;
+        }
+        .sync-label input[type="checkbox"] {
+            width: 16px; height: 16px; cursor: pointer;
+            accent-color: #ef4444;
+        }
+        .compare-only { display: none !important; }
+        body.compare-mode .compare-only { display: flex !important; }
+
+        /* ── Toast ── */
+        #toast {
+            position: fixed;
+            bottom: 70px;
+            left: 50%;
+            transform: translateX(-50%) translateY(16px);
+            background: rgba(17,24,39,0.93);
+            color: #f3f4f6;
+            padding: 7px 18px;
+            border-radius: 20px;
+            font-size: 13px;
+            opacity: 0;
+            transition: all 0.3s;
+            pointer-events: none;
+            z-index: 1000;
+            border: 1px solid #374151;
+        }
+        #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        /* hide file inputs */
+        input[type="file"] { display: none; }
+    </style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<div id="header">
+    <h1>⚾ コーチビデオ</h1>
+    <button class="mode-btn active" id="btnSingle" onclick="setMode('single')">シングル</button>
+    <button class="mode-btn" id="btnCompare" onclick="setMode('compare')">2画面比較</button>
+    <div class="hdr-spacer"></div>
+    <span class="hdr-hint">iPad ビデオ分析</span>
+</div>
+
+<!-- ── Main ── -->
+<div id="main">
+
+    <!-- Panels -->
+    <div id="panels-container">
+
+        <!-- Panel A -->
+        <div class="video-panel" id="panel1">
+            <div class="panel-label-bar">
+                <span class="lbl">A</span>
+                <span class="filename" id="filename1">動画なし</span>
+                <button class="panel-reload-btn" onclick="triggerLoad(1)">変更</button>
+            </div>
+            <div class="panel-video-wrapper" id="wrapper1">
+                <video class="panel-video" id="video1" playsinline preload="metadata"></video>
+                <canvas class="panel-canvas" id="canvas1"></canvas>
+                <!-- drop zone -->
+                <div class="drop-zone" id="dz1" onclick="triggerLoad(1)">
+                    <div class="drop-zone-icon">🎬</div>
+                    <div class="drop-zone-text">タップして動画を選択</div>
+                    <button class="load-video-btn">ファイルを開く</button>
+                </div>
+            </div>
+            <div class="panel-seek-bar">
+                <input type="range" class="seek-bar" id="seek1" min="0" max="1000" value="0" step="1">
+                <span class="time-disp" id="time1">0:00 / 0:00</span>
+            </div>
+        </div>
+
+        <!-- Panel B (compare) -->
+        <div class="video-panel" id="panel2" style="display:none">
+            <div class="panel-label-bar">
+                <span class="lbl">B</span>
+                <span class="filename" id="filename2">動画なし</span>
+                <button class="panel-reload-btn" onclick="triggerLoad(2)">変更</button>
+            </div>
+            <div class="panel-video-wrapper" id="wrapper2">
+                <video class="panel-video" id="video2" playsinline preload="metadata"></video>
+                <canvas class="panel-canvas" id="canvas2"></canvas>
+                <div class="drop-zone" id="dz2" onclick="triggerLoad(2)">
+                    <div class="drop-zone-icon">🎬</div>
+                    <div class="drop-zone-text">タップして比較動画を選択</div>
+                    <button class="load-video-btn">ファイルを開く</button>
+                </div>
+            </div>
+            <div class="panel-seek-bar">
+                <input type="range" class="seek-bar" id="seek2" min="0" max="1000" value="0" step="1">
+                <span class="time-disp" id="time2">0:00 / 0:00</span>
+            </div>
+        </div>
+
+    </div><!-- /panels-container -->
+
+    <!-- Right Sidebar (Drawing Tools) -->
+    <div id="sidebar">
+        <span class="sec-label">描画</span>
+        <button class="tool-btn active" id="tool-pen" onclick="setTool('pen')">✏️<span class="tlbl">ペン</span></button>
+        <button class="tool-btn" id="tool-line" onclick="setTool('line')">╱<span class="tlbl">直線</span></button>
+        <button class="tool-btn" id="tool-arrow" onclick="setTool('arrow')">➜<span class="tlbl">矢印</span></button>
+        <button class="tool-btn" id="tool-circle" onclick="setTool('circle')">○<span class="tlbl">楕円</span></button>
+        <button class="tool-btn" id="tool-rect" onclick="setTool('rect')">▭<span class="tlbl">四角</span></button>
+        <button class="tool-btn" id="tool-eraser" onclick="setTool('eraser')">🧹<span class="tlbl">消し</span></button>
+
+        <div class="divider"></div>
+        <span class="sec-label">色</span>
+        <div class="color-grid">
+            <button class="color-dot active" style="background:#ef4444" data-c="#ef4444" onclick="setColor(this)"></button>
+            <button class="color-dot" style="background:#3b82f6" data-c="#3b82f6" onclick="setColor(this)"></button>
+            <button class="color-dot" style="background:#facc15" data-c="#facc15" onclick="setColor(this)"></button>
+            <button class="color-dot" style="background:#22c55e" data-c="#22c55e" onclick="setColor(this)"></button>
+            <button class="color-dot" style="background:#ffffff" data-c="#ffffff" onclick="setColor(this)"></button>
+            <button class="color-dot" style="background:#f97316" data-c="#f97316" onclick="setColor(this)"></button>
+        </div>
+
+        <div class="divider"></div>
+        <span class="sec-label">太さ</span>
+        <div class="brush-wrap">
+            <input type="range" class="brush-slider" id="brushSlider" min="1" max="20" value="3" oninput="brushSize=+this.value">
+        </div>
+
+        <div class="divider"></div>
+        <button class="tool-btn" onclick="undoDraw()">↩<span class="tlbl">戻す</span></button>
+        <button class="tool-btn" onclick="clearDraw()" style="color:#ef4444">🗑<span class="tlbl">全消去</span></button>
+    </div>
+
+</div><!-- /main -->
+
+<!-- ── Bottom Bar ── -->
+<div id="bottom-bar">
+    <!-- Frame / play controls -->
+    <button class="ctrl-btn" onclick="stepFrame(-5)" title="-5フレーム">⏮</button>
+    <button class="ctrl-btn" onclick="stepFrame(-1)" title="-1フレーム">◀</button>
+    <button class="ctrl-btn big" id="playBtn" onclick="togglePlay()">▶</button>
+    <button class="ctrl-btn" onclick="stepFrame(1)" title="+1フレーム">▶</button>
+    <button class="ctrl-btn" onclick="stepFrame(5)" title="+5フレーム">⏭</button>
+
+    <!-- Speed -->
+    <select class="speed-select" id="speedSel" onchange="setSpeed(this.value)">
+        <option value="0.1">0.1x</option>
+        <option value="0.25">0.25x</option>
+        <option value="0.5">0.5x スロー</option>
+        <option value="0.75">0.75x</option>
+        <option value="1" selected>1x 通常</option>
+        <option value="1.5">1.5x</option>
+        <option value="2">2x</option>
+    </select>
+
+    <div class="bar-spacer"></div>
+
+    <!-- Compare: sync toggle -->
+    <label class="sync-label compare-only">
+        <input type="checkbox" id="syncChk" onchange="setSyncMode(this.checked)">
+        同期再生
+    </label>
+</div>
+
+<!-- Hidden file inputs -->
+<input type="file" id="fi1" accept="video/*" onchange="loadVideo(1,this)">
+<input type="file" id="fi2" accept="video/*" onchange="loadVideo(2,this)">
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+// ─────────────────────────────────────────────
+// State
+// ─────────────────────────────────────────────
+const FPS = 30;
+let mode = 'single';
+let tool = 'pen';
+let color = '#ef4444';
+let brushSize = 3;
+let syncMode = false;
+let activePanel = 1;
+let drawing = false;
+let seekingPanel = 0;
+
+const ds = {
+    1: { history: [], sx: 0, sy: 0, tmp: null },
+    2: { history: [], sx: 0, sy: 0, tmp: null }
+};
+
+// ─────────────────────────────────────────────
+// Init
+// ─────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+    [1, 2].forEach(p => {
+        initCanvas(p);
+        initVideoEvents(p);
+    });
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    window.addEventListener('resize', () => { [1,2].forEach(resizeCanvas); });
+});
+
+// ─────────────────────────────────────────────
+// Mode switch
+// ─────────────────────────────────────────────
+function setMode(m) {
+    mode = m;
+    const p2 = document.getElementById('panel2');
+    if (m === 'compare') {
+        p2.style.display = 'flex';
+        p2.style.flexDirection = 'column';
+        document.getElementById('btnCompare').classList.add('active');
+        document.getElementById('btnSingle').classList.remove('active');
+        document.body.classList.add('compare-mode');
+    } else {
+        p2.style.display = 'none';
+        document.getElementById('btnSingle').classList.add('active');
+        document.getElementById('btnCompare').classList.remove('active');
+        document.body.classList.remove('compare-mode');
+    }
+    setTimeout(() => [1,2].forEach(resizeCanvas), 60);
+}
+
+// ─────────────────────────────────────────────
+// Video loading
+// ─────────────────────────────────────────────
+function triggerLoad(p) { document.getElementById('fi'+p).click(); }
+
+function loadVideo(p, input) {
+    const file = input.files[0];
+    if (!file) return;
+    const vid = document.getElementById('video'+p);
+    if (vid._blobUrl) URL.revokeObjectURL(vid._blobUrl);
+    const url = URL.createObjectURL(file);
+    vid._blobUrl = url;
+    vid.src = url;
+    vid.load();
+    document.getElementById('dz'+p).classList.add('hidden');
+    document.getElementById('filename'+p).textContent = file.name;
+    vid.addEventListener('loadedmetadata', () => { resizeCanvas(p); updateTime(p); }, { once: true });
+    input.value = '';
+    showToast(`動画${ p===1?'A':'B' }を読み込みました`);
+}
+
+// ─────────────────────────────────────────────
+// Canvas init / resize
+// ─────────────────────────────────────────────
+function initCanvas(p) {
+    const wrapper = document.getElementById('wrapper'+p);
+    const canvas = document.getElementById('canvas'+p);
+
+    // temp canvas for shape preview
+    const tmp = document.createElement('canvas');
+    tmp.className = 'temp-canvas';
+    wrapper.appendChild(tmp);
+    ds[p].tmp = tmp;
+
+    resizeCanvas(p);
+    setupDraw(p);
+}
+
+function resizeCanvas(p) {
+    const wrapper = document.getElementById('wrapper'+p);
+    const canvas = document.getElementById('canvas'+p);
+    const tmp = ds[p].tmp;
+    const W = wrapper.offsetWidth;
+    const H = wrapper.offsetHeight;
+    if (!W || !H) return;
+
+    // preserve existing drawing
+    const ctx = canvas.getContext('2d');
+    let saved = null;
+    if (canvas.width > 0 && canvas.height > 0) {
+        try { saved = ctx.getImageData(0, 0, canvas.width, canvas.height); } catch(e) {}
+    }
+
+    canvas.width = W; canvas.height = H;
+    if (tmp) { tmp.width = W; tmp.height = H; }
+
+    if (saved) {
+        const tmpImg = document.createElement('canvas');
+        tmpImg.width = saved.width; tmpImg.height = saved.height;
+        tmpImg.getContext('2d').putImageData(saved, 0, 0);
+        ctx.drawImage(tmpImg, 0, 0, W, H);
+    }
+}
+
+// ─────────────────────────────────────────────
+// Drawing
+// ─────────────────────────────────────────────
+function setupDraw(p) {
+    const canvas = document.getElementById('canvas'+p);
+
+    const down = (e, src) => { e.preventDefault(); startDraw(p, src); };
+    const move = (e, src) => { e.preventDefault(); moveDraw(p, src); };
+    const up   = (e, src) => { e.preventDefault(); endDraw(p, src); };
+
+    canvas.addEventListener('mousedown', e => down(e, e));
+    canvas.addEventListener('mousemove', e => move(e, e));
+    canvas.addEventListener('mouseup',   e => up(e, e));
+    canvas.addEventListener('mouseleave',e => { if(drawing && activePanel===p) endDraw(p, e); });
+
+    canvas.addEventListener('touchstart', e => { down(e, e.touches[0]); },      {passive:false});
+    canvas.addEventListener('touchmove',  e => { move(e, e.touches[0]); },      {passive:false});
+    canvas.addEventListener('touchend',   e => { up(e, e.changedTouches[0]); }, {passive:false});
+}
+
+function pos(p, ev) {
+    const c = document.getElementById('canvas'+p);
+    const r = c.getBoundingClientRect();
+    const sx = c.width  / r.width;
+    const sy = c.height / r.height;
+    return { x: (ev.clientX - r.left)*sx, y: (ev.clientY - r.top)*sy };
+}
+
+function startDraw(p, ev) {
+    activePanel = p;
+    drawing = true;
+    const { x, y } = pos(p, ev);
+    const s = ds[p];
+    s.sx = x; s.sy = y; s.lx = x; s.ly = y;
+
+    // save history snapshot BEFORE drawing
+    const canvas = document.getElementById('canvas'+p);
+    s.history.push(canvas.toDataURL());
+    if (s.history.length > 25) s.history.shift();
+
+    if (tool === 'pen' || tool === 'eraser') {
+        const ctx = canvas.getContext('2d');
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+    }
+}
+
+function moveDraw(p, ev) {
+    if (!drawing || activePanel !== p) return;
+    const { x, y } = pos(p, ev);
+    const s = ds[p];
+    const canvas = document.getElementById('canvas'+p);
+    const ctx = canvas.getContext('2d');
+    const tmp = s.tmp;
+    const tCtx = tmp ? tmp.getContext('2d') : null;
+
+    if (tool === 'pen') {
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.strokeStyle = color;
+        ctx.lineWidth = brushSize;
+        ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        ctx.lineTo(x, y); ctx.stroke();
+    } else if (tool === 'eraser') {
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.lineWidth = brushSize * 5;
+        ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        ctx.lineTo(x, y); ctx.stroke();
+    } else if (tCtx) {
+        tCtx.clearRect(0, 0, tmp.width, tmp.height);
+        tCtx.strokeStyle = color;
+        tCtx.fillStyle = color;
+        tCtx.lineWidth = brushSize;
+        tCtx.lineCap = 'round';
+        drawShape(tCtx, tool, s.sx, s.sy, x, y);
+    }
+    s.lx = x; s.ly = y;
+}
+
+function endDraw(p, ev) {
+    if (!drawing || activePanel !== p) return;
+    drawing = false;
+    const { x, y } = pos(p, ev);
+    const s = ds[p];
+    const canvas = document.getElementById('canvas'+p);
+    const ctx = canvas.getContext('2d');
+
+    // Commit shape tools to main canvas
+    if (tool !== 'pen' && tool !== 'eraser') {
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.strokeStyle = color;
+        ctx.fillStyle = color;
+        ctx.lineWidth = brushSize;
+        ctx.lineCap = 'round';
+        drawShape(ctx, tool, s.sx, s.sy, x, y);
+    }
+
+    // Clear temp canvas
+    if (s.tmp) s.tmp.getContext('2d').clearRect(0, 0, s.tmp.width, s.tmp.height);
+
+    // Reset composite op
+    ctx.globalCompositeOperation = 'source-over';
+}
+
+function drawShape(ctx, t, x1, y1, x2, y2) {
+    ctx.beginPath();
+    if (t === 'line') {
+        ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    } else if (t === 'arrow') {
+        const angle = Math.atan2(y2-y1, x2-x1);
+        const head = Math.max(12, brushSize*5);
+        ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x2, y2);
+        ctx.lineTo(x2 - head*Math.cos(angle-Math.PI/6), y2 - head*Math.sin(angle-Math.PI/6));
+        ctx.lineTo(x2 - head*Math.cos(angle+Math.PI/6), y2 - head*Math.sin(angle+Math.PI/6));
+        ctx.closePath(); ctx.fill();
+    } else if (t === 'circle') {
+        const rx = Math.abs(x2-x1)/2, ry = Math.abs(y2-y1)/2;
+        const cx = (x1+x2)/2, cy = (y1+y2)/2;
+        ctx.ellipse(cx, cy, Math.max(rx,1), Math.max(ry,1), 0, 0, Math.PI*2);
+        ctx.stroke();
+    } else if (t === 'rect') {
+        ctx.strokeRect(x1, y1, x2-x1, y2-y1);
+    }
+}
+
+// ─────────────────────────────────────────────
+// Undo / Clear
+// ─────────────────────────────────────────────
+function undoDraw() {
+    const p = activePanel;
+    const s = ds[p];
+    if (s.history.length === 0) { showToast('これ以上元に戻せません'); return; }
+    const canvas = document.getElementById('canvas'+p);
+    const ctx = canvas.getContext('2d');
+    s.history.pop(); // discard snapshot taken at startDraw of the last stroke
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (s.history.length > 0) {
+        const img = new Image();
+        img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        img.src = s.history[s.history.length-1];
+    }
+    showToast('元に戻しました');
+}
+
+function clearDraw() {
+    const p = activePanel;
+    const canvas = document.getElementById('canvas'+p);
+    canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+    ds[p].history = [];
+    showToast(`パネル${ p===1?'A':'B' }の描画をクリア`);
+}
+
+// ─────────────────────────────────────────────
+// Tool / Color / Brush
+// ─────────────────────────────────────────────
+function setTool(t) {
+    tool = t;
+    document.querySelectorAll('#sidebar .tool-btn').forEach(b => b.classList.remove('active'));
+    const btn = document.getElementById('tool-'+t);
+    if (btn) btn.classList.add('active');
+}
+
+function setColor(el) {
+    color = el.dataset.c;
+    document.querySelectorAll('.color-dot').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+}
+
+// ─────────────────────────────────────────────
+// Video Events
+// ─────────────────────────────────────────────
+function initVideoEvents(p) {
+    const vid = document.getElementById('video'+p);
+    const seek = document.getElementById('seek'+p);
+
+    vid.addEventListener('timeupdate', () => {
+        if (seekingPanel === p) return;
+        const pct = vid.duration ? vid.currentTime / vid.duration * 1000 : 0;
+        seek.value = pct;
+        updateTime(p);
+
+        // Sync B ← A
+        if (syncMode && p === 1 && mode === 'compare') {
+            const v2 = document.getElementById('video2');
+            if (v2.duration && Math.abs(v2.currentTime - vid.currentTime) > 0.08) {
+                v2.currentTime = Math.min(vid.currentTime, v2.duration);
+            }
+        }
+    });
+
+    seek.addEventListener('input', () => {
+        seekingPanel = p;
+        const vid = document.getElementById('video'+p);
+        if (vid.duration) vid.currentTime = (seek.value / 1000) * vid.duration;
+        updateTime(p);
+    });
+    seek.addEventListener('change', () => { seekingPanel = 0; });
+
+    vid.addEventListener('play', updatePlayBtn);
+    vid.addEventListener('pause', updatePlayBtn);
+    vid.addEventListener('ended', updatePlayBtn);
+}
+
+function updateTime(p) {
+    const vid = document.getElementById('video'+p);
+    document.getElementById('time'+p).textContent = `${ft(vid.currentTime)} / ${ft(vid.duration||0)}`;
+}
+
+function ft(s) {
+    if (!isFinite(s) || s < 0) return '0:00';
+    const m = Math.floor(s/60);
+    return `${m}:${Math.floor(s%60).toString().padStart(2,'0')}`;
+}
+
+function updatePlayBtn() {
+    const v1 = document.getElementById('video1');
+    document.getElementById('playBtn').textContent = v1.paused ? '▶' : '⏸';
+}
+
+// ─────────────────────────────────────────────
+// Playback controls
+// ─────────────────────────────────────────────
+function togglePlay() {
+    const v1 = document.getElementById('video1');
+    if (!v1.src) { showToast('動画を読み込んでください'); return; }
+    const paused = v1.paused;
+    paused ? v1.play() : v1.pause();
+    if (syncMode && mode === 'compare') {
+        const v2 = document.getElementById('video2');
+        if (v2.src) paused ? v2.play() : v2.pause();
+    }
+}
+
+function stepFrame(n) {
+    const step = n / FPS;
+    const panels = mode === 'compare' ? [1, 2] : [1];
+    panels.forEach(p => {
+        const vid = document.getElementById('video'+p);
+        if (!vid.src || !vid.duration) return;
+        vid.pause();
+        vid.currentTime = Math.max(0, Math.min(vid.duration, vid.currentTime + step));
+    });
+}
+
+function setSpeed(r) {
+    const rate = parseFloat(r);
+    [1, 2].forEach(p => {
+        const vid = document.getElementById('video'+p);
+        vid.playbackRate = rate;
+    });
+}
+
+function setSyncMode(on) {
+    syncMode = on;
+    showToast(on ? '同期再生 ON' : '同期再生 OFF');
+}
+
+// ─────────────────────────────────────────────
+// Toast
+// ─────────────────────────────────────────────
+let toastTimer;
+function showToast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+}
+</script>
+</body>
+</html>
