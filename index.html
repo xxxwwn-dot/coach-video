@@ -4,83 +4,168 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>コーチビデオ</title>
-
-    <!-- ── PWA / Apple Home Screen ── -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="コーチビデオ">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#1f2937">
-    <link rel="manifest" href="data:application/json,%7B%22name%22%3A%22%E3%82%B3%E3%83%BC%E3%83%81%E3%83%93%E3%83%87%E3%82%AA%22%2C%22short_name%22%3A%22%E3%82%B3%E3%83%BC%E3%83%81%E3%83%93%E3%83%87%E3%82%AA%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23111827%22%2C%22theme_color%22%3A%22%231f2937%22%2C%22orientation%22%3A%22landscape%22%2C%22start_url%22%3A%22.%22%7D">
-    <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxOTIgMTkyIj48cmVjdCB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgcng9IjQwIiBmaWxsPSIjMWYyOTM3Ii8+PHRleHQgeD0iOTYiIHk9IjEzMCIgZm9udC1zaXplPSI5NiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+4pq+77iPPC90ZXh0Pjwvc3ZnPg==">
-
+    <meta name="theme-color" content="#141408">
+    <link rel="manifest" href="data:application/json,%7B%22name%22%3A%22%E3%82%B3%E3%83%BC%E3%83%81%E3%83%93%E3%83%87%E3%82%AA%22%2C%22short_name%22%3A%22%E3%82%B3%E3%83%BC%E3%83%81%E3%83%93%E3%83%87%E3%82%AA%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%230a0a06%22%2C%22theme_color%22%3A%22%23141408%22%2C%22orientation%22%3A%22landscape%22%2C%22start_url%22%3A%22.%22%7D">
+    <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxOTIgMTkyIj48cmVjdCB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgcng9IjQwIiBmaWxsPSIjMTQxNDA4Ii8+PHRleHQgeD0iOTYiIHk9IjEzMCIgZm9udC1zaXplPSI5NiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+4pq+77iPPC90ZXh0Pjwvc3ZnPg==">
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-
+        :root {
+            --bg:         #0a0a06;
+            --bar:        #171708;
+            --btn:        #272710;
+            --btn-bd:     #353518;
+            --btn-act:    #3d4610;
+            --btn-act-bd: #7a8c1a;
+            --icon:       #b8a830;
+            --icon-dim:   #68602a;
+            --txt:        #808050;
+            --sep:        #2a2a10;
+            --play:       #20c818;
+            --play-sh:    rgba(32,200,24,0.35);
+            --red-btn:    #3a0808;
+            --red-bd:     #6a1818;
+            --red-ic:     #f87171;
+        }
+        * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
         body {
-            background: #111827;
-            color: #f3f4f6;
+            background: var(--bg);
+            color: var(--txt);
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             height: 100dvh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            user-select: none;
+            display: flex; flex-direction: column;
+            overflow: hidden; user-select: none;
         }
 
-        /* ── Header ── */
-        #header {
-            background: #1f2937;
-            padding: 8px 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            border-bottom: 1px solid #374151;
-            flex-shrink: 0;
-            min-height: 52px;
+        /* ══════════════════════════
+           TOP TOOLBAR
+        ══════════════════════════ */
+        #toolbar {
+            height: 54px; min-height: 54px;
+            background: var(--bar);
+            border-bottom: 1px solid var(--sep);
+            display: flex; align-items: center;
+            padding: 0 8px; gap: 5px;
+            flex-shrink: 0; overflow: hidden;
         }
-        #header h1 { font-size: 16px; font-weight: 700; color: #f87171; letter-spacing: 0.5px; white-space: nowrap; }
+        .tb-sep {
+            width: 1px; height: 34px;
+            background: var(--sep); flex-shrink: 0; margin: 0 1px;
+        }
+
+        /* Base toolbar button */
+        .tb-btn {
+            background: var(--btn); border: 1px solid var(--btn-bd);
+            color: var(--icon); height: 40px; min-width: 40px;
+            border-radius: 9px; font-size: 17px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            padding: 0 10px; transition: all 0.13s; flex-shrink: 0;
+            white-space: nowrap;
+        }
+        .tb-btn.active { background: var(--btn-act); border-color: var(--btn-act-bd); color: #d4e040; }
+        .tb-btn:active  { opacity: 0.7; transform: scale(0.93); }
+
+        /* Mode button group: [A][A|B][B] */
+        .mode-group {
+            display: flex; background: var(--btn);
+            border: 1px solid var(--btn-bd); border-radius: 10px; overflow: hidden;
+        }
         .mode-btn {
-            background: #374151; border: 1px solid #4b5563; color: #9ca3af;
-            padding: 6px 16px; border-radius: 20px; font-size: 13px;
-            cursor: pointer; transition: all 0.2s; white-space: nowrap;
+            background: none; border: none;
+            border-right: 1px solid var(--btn-bd);
+            color: var(--icon-dim); height: 38px; padding: 0 16px;
+            font-size: 13px; font-weight: 700; cursor: pointer;
+            letter-spacing: 1px; transition: all 0.13s; white-space: nowrap;
         }
-        .mode-btn.active { background: #ef4444; border-color: #ef4444; color: white; }
-        .hdr-spacer { flex: 1; }
-        .hdr-hint { font-size: 11px; color: #4b5563; white-space: nowrap; }
+        .mode-btn:last-child { border-right: none; }
+        .mode-btn.active    { background: var(--btn-act); color: #d4e040; border-color: var(--btn-act-bd); }
+        .mode-btn:active    { opacity: 0.7; }
 
-        /* ── Main ── */
-        #main { flex: 1; display: flex; flex-direction: row; overflow: hidden; min-height: 0; }
+        /* Tool buttons grouped */
+        .tool-group { display: flex; gap: 3px; }
+        .tool-btn   { min-width: 38px; height: 38px; padding: 0 8px; border-radius: 8px; font-size: 16px; }
 
-        /* ── Panels ── */
-        #panels-container { flex: 1; display: flex; gap: 4px; padding: 4px; overflow: hidden; min-width: 0; }
+        /* Color dots */
+        .color-strip { display: flex; gap: 5px; align-items: center; padding: 0 3px; }
+        .cdot {
+            width: 20px; height: 20px; border-radius: 50%;
+            border: 2px solid transparent; cursor: pointer; flex-shrink: 0;
+            transition: transform 0.1s;
+        }
+        .cdot.active { border-color: rgba(255,255,255,0.85); transform: scale(1.25); }
 
-        .video-panel {
+        /* Brush slider (inline in toolbar) */
+        .brush-wrap { display: flex; align-items: center; }
+        .brush-slider {
+            width: 64px; height: 3px; -webkit-appearance: none;
+            background: var(--btn-bd); border-radius: 2px;
+            cursor: pointer; outline: none;
+        }
+        .brush-slider::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 14px; height: 14px;
+            background: var(--icon); border-radius: 50%;
+        }
+
+        /* Sync toggle (A|B mode) */
+        .sync-btn        { font-size: 13px; padding: 0 10px; color: var(--icon-dim); }
+        .sync-btn.active { color: #d4e040; }
+
+        /* Big green play button */
+        #playBtn {
+            width: 48px; height: 48px; background: var(--play);
+            border: none; border-radius: 12px; color: #001800;
+            font-size: 23px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; font-weight: 900;
+            box-shadow: 0 0 14px var(--play-sh);
+            transition: all 0.13s; margin-left: 2px;
+        }
+        #playBtn:active { transform: scale(0.91); background: #15a012; }
+
+        /* ══════════════════════════
+           ZOOM POPUP
+        ══════════════════════════ */
+        #zoomPopup {
+            position: fixed; top: 58px; left: 50%;
+            transform: translateX(-50%);
+            background: var(--bar); border: 1px solid var(--btn-act-bd);
+            border-radius: 12px; padding: 10px 12px;
+            display: flex; flex-direction: column; gap: 8px;
+            z-index: 600; min-width: 180px;
+            box-shadow: 0 6px 24px rgba(0,0,0,0.7);
+        }
+        #zoomPopup.hidden { display: none; }
+        .zpop-label { font-size: 11px; color: var(--icon-dim); text-align: center; font-family: monospace; }
+        .zpop-btn {
+            background: var(--btn); border: 1px solid var(--btn-bd);
+            color: var(--icon); padding: 8px 14px; border-radius: 8px;
+            font-size: 14px; cursor: pointer; text-align: left;
+        }
+        .zpop-btn:active { background: var(--btn-act); }
+        .zpop-slider { width: 100%; accent-color: var(--icon); height: 4px; }
+
+        /* ══════════════════════════
+           PANELS
+        ══════════════════════════ */
+        #panels-container {
+            flex: 1; display: flex; flex-direction: row;
+            overflow: hidden; min-height: 0;
+            gap: 2px; padding: 2px; background: #040402;
+        }
+        .panel {
             flex: 1; display: flex; flex-direction: column;
-            background: #000; border-radius: 8px; overflow: hidden; min-width: 0;
+            min-width: 0; overflow: hidden; border-radius: 4px;
         }
-
-        /* Panel label */
-        .panel-label-bar {
-            background: #1f2937; padding: 3px 8px; font-size: 11px;
-            color: #6b7280; display: flex; align-items: center; gap: 6px; flex-shrink: 0;
-        }
-        .panel-label-bar .lbl { font-weight: 700; color: #9ca3af; }
-        .panel-label-bar .filename { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .panel-reload-btn {
-            background: none; border: 1px solid #374151; color: #6b7280;
-            font-size: 11px; padding: 2px 8px; border-radius: 4px; cursor: pointer;
-        }
-        .panel-reload-btn:hover { border-color: #6b7280; color: #9ca3af; }
 
         /* Video wrapper — clips zoom */
-        .panel-video-wrapper {
+        .vwrap {
             flex: 1; position: relative;
-            display: flex; align-items: center; justify-content: center;
             background: #000; overflow: hidden; min-height: 0;
         }
 
-        /* Zoom wrapper — transforms applied here */
+        /* Zoom layer */
         .zoom-wrap {
             position: absolute; top: 0; left: 0;
             width: 100%; height: 100%;
@@ -88,429 +173,343 @@
             display: flex; align-items: center; justify-content: center;
             will-change: transform;
         }
-
-        .panel-video { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
-
+        .panel-video {
+            max-width: 100%; max-height: 100%;
+            object-fit: contain; display: block;
+        }
         .panel-canvas {
             position: absolute; top: 0; left: 0;
-            width: 100%; height: 100%;
-            touch-action: none;
+            width: 100%; height: 100%; touch-action: none;
         }
-
         .temp-canvas {
             position: absolute; top: 0; left: 0;
-            width: 100%; height: 100%;
-            pointer-events: none;
+            width: 100%; height: 100%; pointer-events: none;
         }
 
-        /* Zoom badge */
+        /* Panel overlay badges */
         .zoom-badge {
-            position: absolute; top: 5px; right: 5px;
-            background: rgba(0,0,0,0.65); color: #6b7280;
+            position: absolute; top: 6px; left: 6px;
+            background: rgba(0,0,0,0.6); color: var(--icon-dim);
             font-size: 10px; padding: 2px 7px; border-radius: 4px;
             pointer-events: none; z-index: 5; font-family: monospace;
-            transition: color 0.2s;
         }
-        .zoom-badge.zoomed { color: #fbbf24; }
-
-        /* Canvas cursor per tool */
-        body.tool-pen    .panel-canvas { cursor: crosshair; }
-        body.tool-eraser .panel-canvas { cursor: cell; }
-        body.tool-pan    .panel-canvas { cursor: grab; }
-        body.tool-pan    .panel-canvas:active { cursor: grabbing; }
+        .zoom-badge.zoomed { color: #d4c040; }
+        .panel-id-badge {
+            position: absolute; top: 6px; right: 6px;
+            background: rgba(0,0,0,0.55); color: var(--icon);
+            font-size: 13px; font-weight: 700;
+            padding: 2px 9px; border-radius: 4px;
+            pointer-events: none; z-index: 5;
+        }
 
         /* Drop zone */
         .drop-zone {
             position: absolute; inset: 0;
             display: flex; flex-direction: column;
             align-items: center; justify-content: center;
-            background: rgba(0,0,0,0.9); cursor: pointer; z-index: 10; gap: 10px;
+            background: rgba(0,0,0,0.88); cursor: pointer;
+            z-index: 10; gap: 12px;
         }
         .drop-zone.hidden { display: none; }
-        .drop-zone-icon { font-size: 44px; }
-        .drop-zone-text { font-size: 14px; color: #9ca3af; }
-        .load-video-btn {
-            background: #ef4444; color: white; border: none;
-            padding: 10px 24px; border-radius: 8px; font-size: 15px;
-            cursor: pointer; font-weight: 600;
+        .dz-icon { font-size: 50px; opacity: 0.45; }
+        .dz-text { font-size: 15px; color: var(--txt); }
+        .dz-btn {
+            background: var(--btn-act); border: 1px solid var(--btn-act-bd);
+            color: #d4e040; padding: 10px 28px; border-radius: 9px;
+            font-size: 15px; cursor: pointer; font-weight: 700;
         }
 
-        /* ── Per-panel mini controls ── */
-        .panel-mini-ctrl {
-            background: #1a2233;
-            padding: 4px 6px;
-            display: flex; align-items: center; gap: 4px;
-            flex-shrink: 0; border-top: 1px solid #2d3748;
+        /* ══════════════════════════
+           SEEK ROW (per panel)
+        ══════════════════════════ */
+        .seek-row {
+            background: var(--bar); border-top: 1px solid var(--sep);
+            padding: 5px 6px; display: flex; align-items: center;
+            gap: 4px; flex-shrink: 0;
         }
-        .mini-btn {
-            background: #374151; border: 1px solid #4b5563; color: #d1d5db;
-            width: 30px; height: 30px; border-radius: 6px; font-size: 13px;
-            cursor: pointer; display: flex; align-items: center; justify-content: center;
+        .sk-btn {
+            background: var(--btn); border: 1px solid var(--btn-bd);
+            color: var(--icon); width: 30px; height: 30px;
+            border-radius: 7px; font-size: 12px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
             flex-shrink: 0; transition: all 0.12s;
         }
-        .mini-btn.play-btn {
-            background: #ef4444; border-color: #ef4444; color: white;
-            width: 38px; height: 38px; font-size: 17px; border-radius: 8px;
+        .sk-btn:active { background: var(--btn-act); transform: scale(0.88); }
+        .sk-btn.play-sk {
+            background: var(--play); border-color: var(--play); color: #001800;
+            width: 34px; height: 34px; font-size: 15px; border-radius: 8px; font-weight: 900;
         }
-        .mini-btn:active { transform: scale(0.88); }
-        .mini-speed {
-            background: #374151; border: 1px solid #4b5563; color: #d1d5db;
-            padding: 3px 5px; border-radius: 6px; font-size: 11px;
-            cursor: pointer; outline: none; height: 30px;
-        }
-        .mini-speed option { background: #1f2937; }
-        .mini-btn.clear-btn {
-            background: #7f1d1d; border-color: #991b1b; color: #fca5a5;
-            font-size: 15px;
-        }
-        .mini-btn.clear-btn:active { background: #991b1b; }
-
-        /* ── Seek bar ── */
-        .panel-seek-bar {
-            background: #1f2937; padding: 5px 8px;
-            display: flex; align-items: center; gap: 6px; flex-shrink: 0;
+        .sk-btn.clear-sk {
+            background: var(--red-btn); border-color: var(--red-bd); color: var(--red-ic);
         }
         .seek-bar {
             flex: 1; height: 4px; -webkit-appearance: none;
-            background: #374151; border-radius: 2px; cursor: pointer; outline: none;
+            background: var(--btn-bd); border-radius: 2px;
+            cursor: pointer; outline: none;
         }
         .seek-bar::-webkit-slider-thumb {
-            -webkit-appearance: none; width: 14px; height: 14px;
-            background: #ef4444; border-radius: 50%;
+            -webkit-appearance: none; width: 13px; height: 13px;
+            background: var(--icon); border-radius: 50%;
         }
+        .spd-sel {
+            background: var(--btn); border: 1px solid var(--btn-bd);
+            color: var(--txt); padding: 2px 3px;
+            border-radius: 6px; font-size: 10px;
+            cursor: pointer; outline: none; height: 26px; flex-shrink: 0;
+        }
+        .spd-sel option { background: var(--bar); }
         .time-disp {
-            font-size: 11px; color: #6b7280;
-            min-width: 90px; text-align: right; font-family: monospace;
+            font-size: 10px; color: var(--icon-dim);
+            min-width: 80px; text-align: right;
+            font-family: monospace; white-space: nowrap;
         }
 
-        /* ── Right Sidebar ── */
-        #sidebar {
-            width: 66px; background: #1f2937;
-            display: flex; flex-direction: column; align-items: center;
-            padding: 6px 4px; gap: 4px;
-            border-left: 1px solid #374151; overflow-y: auto; flex-shrink: 0;
-        }
-        #sidebar::-webkit-scrollbar { width: 3px; }
-        #sidebar::-webkit-scrollbar-thumb { background: #374151; border-radius: 2px; }
-
-        .sec-label {
-            font-size: 9px; color: #4b5563; text-transform: uppercase;
-            letter-spacing: 0.5px; margin-top: 4px; width: 100%; text-align: center;
-        }
-
-        .tool-btn {
-            width: 52px; height: 52px; background: #374151; border: 1px solid #4b5563;
-            border-radius: 10px; color: #d1d5db; cursor: pointer;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            font-size: 20px; gap: 1px; transition: all 0.15s; flex-shrink: 0;
-        }
-        .tool-btn .tlbl { font-size: 9px; color: #6b7280; }
-        .tool-btn.active { background: #ef4444; border-color: #ef4444; color: white; }
-        .tool-btn.active .tlbl { color: rgba(255,255,255,0.8); }
-        .tool-btn:active { transform: scale(0.92); }
-
-        .color-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
-        .color-dot {
-            width: 24px; height: 24px; border-radius: 50%;
-            border: 2px solid transparent; cursor: pointer; transition: transform 0.1s;
-        }
-        .color-dot.active { border-color: white; transform: scale(1.2); }
-
-        .divider { width: 100%; height: 1px; background: #374151; margin: 3px 0; }
-
-        .brush-wrap { width: 54px; }
-        .brush-slider {
-            width: 100%; height: 3px; -webkit-appearance: none;
-            background: #374151; border-radius: 2px; cursor: pointer; outline: none;
-        }
-        .brush-slider::-webkit-slider-thumb {
-            -webkit-appearance: none; width: 12px; height: 12px;
-            background: #ef4444; border-radius: 50%;
-        }
-
-        /* ── Bottom bar ── */
-        #bottom-bar {
-            background: #1f2937; padding: 6px 10px;
-            display: flex; align-items: center; gap: 6px;
-            border-top: 1px solid #374151; flex-shrink: 0; min-height: 56px;
-        }
-        .ctrl-btn {
-            background: #374151; border: 1px solid #4b5563; color: #d1d5db;
-            width: 42px; height: 42px; border-radius: 8px; font-size: 17px;
-            cursor: pointer; display: flex; align-items: center; justify-content: center;
-            transition: all 0.15s; flex-shrink: 0;
-        }
-        .ctrl-btn:active { background: #4b5563; transform: scale(0.92); }
-        .ctrl-btn.big {
-            background: #ef4444; border-color: #ef4444; color: white;
-            width: 50px; height: 50px; font-size: 22px; border-radius: 12px;
-        }
-        .ctrl-btn.big:active { background: #dc2626; }
-        .speed-select {
-            background: #374151; border: 1px solid #4b5563; color: #d1d5db;
-            padding: 5px 6px; border-radius: 8px; font-size: 12px;
-            cursor: pointer; outline: none; min-width: 70px;
-        }
-        .speed-select option { background: #1f2937; }
-        .bar-spacer { flex: 1; }
-        .sync-label {
-            display: flex; align-items: center; gap: 5px;
-            font-size: 12px; color: #6b7280; cursor: pointer;
-        }
-        .sync-label input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: #ef4444; }
-        .compare-only { display: none !important; }
-        body.compare-mode .compare-only { display: flex !important; }
-
-        /* ── Toast ── */
+        /* ══════════════════════════
+           TOAST
+        ══════════════════════════ */
         #toast {
-            position: fixed; bottom: 70px; left: 50%;
+            position: fixed; bottom: 48px; left: 50%;
             transform: translateX(-50%) translateY(16px);
-            background: rgba(17,24,39,0.93); color: #f3f4f6;
+            background: rgba(8,8,4,0.94); color: var(--icon);
             padding: 7px 18px; border-radius: 20px; font-size: 13px;
             opacity: 0; transition: all 0.3s; pointer-events: none;
-            z-index: 1000; border: 1px solid #374151;
+            z-index: 1000; border: 1px solid var(--btn-act-bd);
         }
         #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
         input[type="file"] { display: none; }
+
+        /* cursor per tool */
+        body.tool-pen    .panel-canvas,
+        body.tool-line   .panel-canvas,
+        body.tool-arrow  .panel-canvas,
+        body.tool-circle .panel-canvas,
+        body.tool-rect   .panel-canvas { cursor: crosshair; }
+        body.tool-eraser .panel-canvas { cursor: cell; }
     </style>
 </head>
 <body class="tool-pen">
 
-<!-- ── Header ── -->
-<div id="header">
-    <h1>⚾ コーチビデオ</h1>
-    <button class="mode-btn active" id="btnSingle" onclick="setMode('single')">シングル</button>
-    <button class="mode-btn" id="btnCompare" onclick="setMode('compare')">2画面比較</button>
-    <div class="hdr-spacer"></div>
-    <span class="hdr-hint">iPad ビデオ分析</span>
+<!-- ══════════════════════════════════════════
+     TOP TOOLBAR
+══════════════════════════════════════════ -->
+<div id="toolbar">
+
+    <!-- Load video (active panel) -->
+    <button class="tb-btn" onclick="triggerLoad(activePanel)" title="動画を開く" style="font-size:19px">📂</button>
+    <div class="tb-sep"></div>
+
+    <!-- Mode: A / A|B / B -->
+    <div class="mode-group">
+        <button class="mode-btn active" id="modeA"  onclick="setMode('a')">A</button>
+        <button class="mode-btn"        id="modeAB" onclick="setMode('ab')">A|B</button>
+        <button class="mode-btn"        id="modeB"  onclick="setMode('b')">B</button>
+    </div>
+    <div class="tb-sep"></div>
+
+    <!-- Zoom -->
+    <button class="tb-btn" id="zoomBtn" onclick="toggleZoomPopup()" style="font-size:13px;padding:0 11px;">Zoom ▾</button>
+    <div class="tb-sep"></div>
+
+    <!-- Drawing tools -->
+    <div class="tool-group">
+        <button class="tb-btn tool-btn active" id="tool-pen"    onclick="setTool('pen')"    title="ペン"  >✏</button>
+        <button class="tb-btn tool-btn"        id="tool-arrow"  onclick="setTool('arrow')"  title="矢印" >→</button>
+        <button class="tb-btn tool-btn"        id="tool-line"   onclick="setTool('line')"   title="直線" >╱</button>
+        <button class="tb-btn tool-btn"        id="tool-circle" onclick="setTool('circle')" title="楕円" >○</button>
+        <button class="tb-btn tool-btn"        id="tool-rect"   onclick="setTool('rect')"   title="四角" >□</button>
+        <button class="tb-btn tool-btn"        id="tool-eraser" onclick="setTool('eraser')" title="消し" >⊘</button>
+    </div>
+    <div class="tb-sep"></div>
+
+    <!-- Colors -->
+    <div class="color-strip">
+        <button class="cdot active" style="background:#ef4444" data-c="#ef4444" onclick="setColor(this)"></button>
+        <button class="cdot"        style="background:#3b82f6" data-c="#3b82f6" onclick="setColor(this)"></button>
+        <button class="cdot"        style="background:#facc15" data-c="#facc15" onclick="setColor(this)"></button>
+        <button class="cdot"        style="background:#22c55e" data-c="#22c55e" onclick="setColor(this)"></button>
+        <button class="cdot"        style="background:#ffffff" data-c="#ffffff" onclick="setColor(this)"></button>
+        <button class="cdot"        style="background:#f97316" data-c="#f97316" onclick="setColor(this)"></button>
+    </div>
+    <div class="tb-sep"></div>
+
+    <!-- Undo / Clear (active panel) -->
+    <button class="tb-btn" onclick="undoDraw()"              title="元に戻す"      style="font-size:16px">↩</button>
+    <button class="tb-btn" onclick="clearPanelDraw(activePanel)" title="描画クリア"
+            style="color:var(--red-ic);background:var(--red-btn);border-color:var(--red-bd);font-size:16px">🗑</button>
+    <div class="tb-sep"></div>
+
+    <!-- Brush size -->
+    <div class="brush-wrap" title="線の太さ">
+        <input type="range" class="brush-slider" id="brushSlider" min="1" max="20" value="3" oninput="brushSize=+this.value">
+    </div>
+    <div class="tb-sep"></div>
+
+    <!-- Sync (visible in A|B mode) -->
+    <button class="tb-btn sync-btn" id="syncBtn" onclick="toggleSync()"
+            title="同期再生" style="display:none;font-size:12px;padding:0 10px;">🔗 同期</button>
+
+    <div style="flex:1"></div>
+
+    <!-- BIG PLAY BUTTON -->
+    <button id="playBtn" onclick="togglePlay()">▶</button>
 </div>
 
-<!-- ── Main ── -->
-<div id="main">
+<!-- ══════════════════════════════════════════
+     ZOOM POPUP
+══════════════════════════════════════════ -->
+<div id="zoomPopup" class="hidden">
+    <span class="zpop-label" id="zoomLabel">ズーム: 100%</span>
+    <input type="range" class="zpop-slider" id="zoomSlider" min="50" max="600" value="100" step="10"
+           oninput="setZoomValue(activePanel, +this.value)">
+    <button class="zpop-btn" onclick="adjustZoom(activePanel, 0.5)">🔍 拡大 (+50%)</button>
+    <button class="zpop-btn" onclick="adjustZoom(activePanel,-0.5)">🔎 縮小 (-50%)</button>
+    <button class="zpop-btn" onclick="resetZoom(activePanel)">⊡ リセット (100%)</button>
+</div>
 
-    <div id="panels-container">
+<!-- ══════════════════════════════════════════
+     PANELS
+══════════════════════════════════════════ -->
+<div id="panels-container">
 
-        <!-- ── Panel A ── -->
-        <div class="video-panel" id="panel1">
-            <div class="panel-label-bar">
-                <span class="lbl">A</span>
-                <span class="filename" id="filename1">動画なし</span>
-                <button class="panel-reload-btn" onclick="triggerLoad(1)">変更</button>
+    <!-- Panel A -->
+    <div class="panel" id="panel1">
+        <div class="vwrap" id="wrapper1">
+            <div class="zoom-wrap" id="zoom1">
+                <video class="panel-video" id="video1" playsinline preload="metadata"></video>
+                <canvas class="panel-canvas" id="canvas1"></canvas>
             </div>
-            <div class="panel-video-wrapper" id="wrapper1">
-                <div class="zoom-wrap" id="zoom1">
-                    <video class="panel-video" id="video1" playsinline preload="metadata"></video>
-                    <canvas class="panel-canvas" id="canvas1"></canvas>
-                </div>
-                <div class="zoom-badge" id="zind1">100%</div>
-                <div class="drop-zone" id="dz1" onclick="triggerLoad(1)">
-                    <div class="drop-zone-icon">🎬</div>
-                    <div class="drop-zone-text">タップして動画を選択</div>
-                    <button class="load-video-btn">ファイルを開く</button>
-                </div>
-            </div>
-            <!-- Per-panel controls -->
-            <div class="panel-mini-ctrl">
-                <button class="mini-btn" onclick="stepPanelFrame(1,-5)" title="-5f">⏮</button>
-                <button class="mini-btn" onclick="stepPanelFrame(1,-1)" title="-1f">◀</button>
-                <button class="mini-btn play-btn" id="pplay1" onclick="togglePanelPlay(1)">▶</button>
-                <button class="mini-btn" onclick="stepPanelFrame(1,1)" title="+1f">▶</button>
-                <button class="mini-btn" onclick="stepPanelFrame(1,5)" title="+5f">⏭</button>
-                <div style="flex:1"></div>
-                <button class="mini-btn clear-btn" onclick="clearPanelDraw(1)" title="描画を一括クリア">🗑</button>
-                <select class="mini-speed" onchange="setPanelSpeed(1,this.value)" title="再生速度">
-                    <option value="0.1">0.1x</option>
-                    <option value="0.25">0.25x</option>
-                    <option value="0.5">0.5x</option>
-                    <option value="0.75">0.75x</option>
-                    <option value="1" selected>1x</option>
-                    <option value="1.5">1.5x</option>
-                    <option value="2">2x</option>
-                </select>
-            </div>
-            <div class="panel-seek-bar">
-                <input type="range" class="seek-bar" id="seek1" min="0" max="1000" value="0" step="1">
-                <span class="time-disp" id="time1">0:00 / 0:00</span>
+            <div class="zoom-badge" id="zind1">100%</div>
+            <div class="panel-id-badge">A</div>
+            <div class="drop-zone" id="dz1" onclick="triggerLoad(1)">
+                <div class="dz-icon">🎬</div>
+                <div class="dz-text">タップして動画 A を選択</div>
+                <button class="dz-btn">ファイルを開く</button>
             </div>
         </div>
-
-        <!-- ── Panel B (compare) ── -->
-        <div class="video-panel" id="panel2" style="display:none">
-            <div class="panel-label-bar">
-                <span class="lbl">B</span>
-                <span class="filename" id="filename2">動画なし</span>
-                <button class="panel-reload-btn" onclick="triggerLoad(2)">変更</button>
-            </div>
-            <div class="panel-video-wrapper" id="wrapper2">
-                <div class="zoom-wrap" id="zoom2">
-                    <video class="panel-video" id="video2" playsinline preload="metadata"></video>
-                    <canvas class="panel-canvas" id="canvas2"></canvas>
-                </div>
-                <div class="zoom-badge" id="zind2">100%</div>
-                <div class="drop-zone" id="dz2" onclick="triggerLoad(2)">
-                    <div class="drop-zone-icon">🎬</div>
-                    <div class="drop-zone-text">タップして比較動画を選択</div>
-                    <button class="load-video-btn">ファイルを開く</button>
-                </div>
-            </div>
-            <!-- Per-panel controls -->
-            <div class="panel-mini-ctrl">
-                <button class="mini-btn" onclick="stepPanelFrame(2,-5)" title="-5f">⏮</button>
-                <button class="mini-btn" onclick="stepPanelFrame(2,-1)" title="-1f">◀</button>
-                <button class="mini-btn play-btn" id="pplay2" onclick="togglePanelPlay(2)">▶</button>
-                <button class="mini-btn" onclick="stepPanelFrame(2,1)" title="+1f">▶</button>
-                <button class="mini-btn" onclick="stepPanelFrame(2,5)" title="+5f">⏭</button>
-                <div style="flex:1"></div>
-                <button class="mini-btn clear-btn" onclick="clearPanelDraw(2)" title="描画を一括クリア">🗑</button>
-                <select class="mini-speed" onchange="setPanelSpeed(2,this.value)" title="再生速度">
-                    <option value="0.1">0.1x</option>
-                    <option value="0.25">0.25x</option>
-                    <option value="0.5">0.5x</option>
-                    <option value="0.75">0.75x</option>
-                    <option value="1" selected>1x</option>
-                    <option value="1.5">1.5x</option>
-                    <option value="2">2x</option>
-                </select>
-            </div>
-            <div class="panel-seek-bar">
-                <input type="range" class="seek-bar" id="seek2" min="0" max="1000" value="0" step="1">
-                <span class="time-disp" id="time2">0:00 / 0:00</span>
-            </div>
+        <div class="seek-row">
+            <button class="sk-btn"       onclick="stepPanelFrame(1,-5)" title="-5f">⏮</button>
+            <button class="sk-btn"       onclick="stepPanelFrame(1,-1)" title="-1f">◀</button>
+            <button class="sk-btn play-sk" id="pplay1" onclick="togglePanelPlay(1)">▶</button>
+            <input  type="range" class="seek-bar" id="seek1" min="0" max="1000" value="0" step="1">
+            <button class="sk-btn"       onclick="stepPanelFrame(1,1)"  title="+1f">▶</button>
+            <button class="sk-btn"       onclick="stepPanelFrame(1,5)"  title="+5f">⏭</button>
+            <select class="spd-sel" onchange="setPanelSpeed(1,this.value)">
+                <option value="0.1">0.1x</option><option value="0.25">0.25x</option>
+                <option value="0.5">0.5x</option><option value="0.75">0.75x</option>
+                <option value="1" selected>1x</option>
+                <option value="1.5">1.5x</option><option value="2">2x</option>
+            </select>
+            <span class="time-disp" id="time1">0:00 / 0:00</span>
+            <button class="sk-btn clear-sk" onclick="clearPanelDraw(1)" title="描画クリア">🗑</button>
         </div>
-
-    </div><!-- /panels-container -->
-
-    <!-- ── Right Sidebar ── -->
-    <div id="sidebar">
-        <span class="sec-label">描画</span>
-        <button class="tool-btn active" id="tool-pen"    onclick="setTool('pen')">✏️<span class="tlbl">ペン</span></button>
-        <button class="tool-btn"        id="tool-line"   onclick="setTool('line')">╱<span class="tlbl">直線</span></button>
-        <button class="tool-btn"        id="tool-arrow"  onclick="setTool('arrow')">➜<span class="tlbl">矢印</span></button>
-        <button class="tool-btn"        id="tool-circle" onclick="setTool('circle')">○<span class="tlbl">楕円</span></button>
-        <button class="tool-btn"        id="tool-rect"   onclick="setTool('rect')">▭<span class="tlbl">四角</span></button>
-        <button class="tool-btn"        id="tool-eraser" onclick="setTool('eraser')">🧹<span class="tlbl">消し</span></button>
-
-        <div class="divider"></div>
-        <span class="sec-label">色</span>
-        <div class="color-grid">
-            <button class="color-dot active" style="background:#ef4444" data-c="#ef4444" onclick="setColor(this)"></button>
-            <button class="color-dot" style="background:#3b82f6" data-c="#3b82f6" onclick="setColor(this)"></button>
-            <button class="color-dot" style="background:#facc15" data-c="#facc15" onclick="setColor(this)"></button>
-            <button class="color-dot" style="background:#22c55e" data-c="#22c55e" onclick="setColor(this)"></button>
-            <button class="color-dot" style="background:#ffffff" data-c="#ffffff" onclick="setColor(this)"></button>
-            <button class="color-dot" style="background:#f97316" data-c="#f97316" onclick="setColor(this)"></button>
-        </div>
-
-        <div class="divider"></div>
-        <span class="sec-label">太さ</span>
-        <div class="brush-wrap">
-            <input type="range" class="brush-slider" id="brushSlider" min="1" max="20" value="3" oninput="brushSize=+this.value">
-        </div>
-
-        <div class="divider"></div>
-        <span class="sec-label">ズーム</span>
-        <button class="tool-btn" onclick="adjustZoom(activePanel, 0.5)">🔍<span class="tlbl">拡大</span></button>
-        <button class="tool-btn" onclick="adjustZoom(activePanel,-0.5)">🔎<span class="tlbl">縮小</span></button>
-        <button class="tool-btn" onclick="resetZoom(activePanel)">⊡<span class="tlbl">リセット</span></button>
-
-        <div class="divider"></div>
-        <button class="tool-btn" onclick="undoDraw()">↩<span class="tlbl">戻す</span></button>
-        <button class="tool-btn" onclick="clearDraw()" style="color:#ef4444">🗑<span class="tlbl">全消去</span></button>
     </div>
 
-</div><!-- /main -->
+    <!-- Panel B -->
+    <div class="panel" id="panel2" style="display:none">
+        <div class="vwrap" id="wrapper2">
+            <div class="zoom-wrap" id="zoom2">
+                <video class="panel-video" id="video2" playsinline preload="metadata"></video>
+                <canvas class="panel-canvas" id="canvas2"></canvas>
+            </div>
+            <div class="zoom-badge" id="zind2">100%</div>
+            <div class="panel-id-badge">B</div>
+            <div class="drop-zone" id="dz2" onclick="triggerLoad(2)">
+                <div class="dz-icon">🎬</div>
+                <div class="dz-text">タップして動画 B を選択</div>
+                <button class="dz-btn">ファイルを開く</button>
+            </div>
+        </div>
+        <div class="seek-row">
+            <button class="sk-btn"         onclick="stepPanelFrame(2,-5)" title="-5f">⏮</button>
+            <button class="sk-btn"         onclick="stepPanelFrame(2,-1)" title="-1f">◀</button>
+            <button class="sk-btn play-sk" id="pplay2" onclick="togglePanelPlay(2)">▶</button>
+            <input  type="range" class="seek-bar" id="seek2" min="0" max="1000" value="0" step="1">
+            <button class="sk-btn"         onclick="stepPanelFrame(2,1)"  title="+1f">▶</button>
+            <button class="sk-btn"         onclick="stepPanelFrame(2,5)"  title="+5f">⏭</button>
+            <select class="spd-sel" onchange="setPanelSpeed(2,this.value)">
+                <option value="0.1">0.1x</option><option value="0.25">0.25x</option>
+                <option value="0.5">0.5x</option><option value="0.75">0.75x</option>
+                <option value="1" selected>1x</option>
+                <option value="1.5">1.5x</option><option value="2">2x</option>
+            </select>
+            <span class="time-disp" id="time2">0:00 / 0:00</span>
+            <button class="sk-btn clear-sk" onclick="clearPanelDraw(2)" title="描画クリア">🗑</button>
+        </div>
+    </div>
 
-<!-- ── Bottom Bar (global: panel A + sync) ── -->
-<div id="bottom-bar">
-    <span style="font-size:10px;color:#4b5563;white-space:nowrap">全体A</span>
-    <button class="ctrl-btn" onclick="stepFrame(-5)">⏮</button>
-    <button class="ctrl-btn" onclick="stepFrame(-1)">◀</button>
-    <button class="ctrl-btn big" id="playBtn" onclick="togglePlay()">▶</button>
-    <button class="ctrl-btn" onclick="stepFrame(1)">▶</button>
-    <button class="ctrl-btn" onclick="stepFrame(5)">⏭</button>
+</div><!-- /panels-container -->
 
-    <select class="speed-select" id="speedSel" onchange="setSpeed(this.value)">
-        <option value="0.1">0.1x</option>
-        <option value="0.25">0.25x</option>
-        <option value="0.5">0.5x スロー</option>
-        <option value="0.75">0.75x</option>
-        <option value="1" selected>1x 通常</option>
-        <option value="1.5">1.5x</option>
-        <option value="2">2x</option>
-    </select>
-
-    <div class="bar-spacer"></div>
-
-    <label class="sync-label compare-only">
-        <input type="checkbox" id="syncChk" onchange="setSyncMode(this.checked)">
-        同期再生
-    </label>
-</div>
-
-<!-- Hidden file inputs -->
 <input type="file" id="fi1" accept="video/*" onchange="loadVideo(1,this)">
 <input type="file" id="fi2" accept="video/*" onchange="loadVideo(2,this)">
 <div id="toast"></div>
 
 <script>
-// ═══════════════════════════════════════════════
-// State
-// ═══════════════════════════════════════════════
-const FPS = 30;
-let mode = 'single';
-let tool = 'pen';
-let color = '#ef4444';
-let brushSize = 3;
-let syncMode = false;
+// ════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════
+const FPS      = 30;
+let mode       = 'a';      // 'a' | 'ab' | 'b'
+let tool       = 'pen';
+let color      = '#ef4444';
+let brushSize  = 3;
+let syncMode   = false;
 let activePanel = 1;
-let drawing = false;
+let drawing    = false;
 let seekingPanel = 0;
+let zoomPopupOpen = false;
 
-// Drawing state
 const ds = {
     1: { history:[], sx:0, sy:0, lx:0, ly:0, tmp:null },
     2: { history:[], sx:0, sy:0, lx:0, ly:0, tmp:null }
 };
 
-// Zoom state per panel
 const zm = {
     1: { scale:1, panX:0, panY:0, pinching:false, lastDist:0, lastMidX:0, lastMidY:0, justPinched:false },
     2: { scale:1, panX:0, panY:0, pinching:false, lastDist:0, lastMidX:0, lastMidY:0, justPinched:false }
 };
 
-// ═══════════════════════════════════════════════
-// Init
-// ═══════════════════════════════════════════════
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', () => {
     [1, 2].forEach(p => { initCanvas(p); initVideoEvents(p); });
     document.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('click', e => {
+        if (!e.target.closest('#zoomPopup') && !e.target.closest('#zoomBtn'))
+            hideZoomPopup();
+    });
     window.addEventListener('resize', () => [1,2].forEach(resizeCanvas));
 });
 
-// ═══════════════════════════════════════════════
-// Mode
-// ═══════════════════════════════════════════════
+// ════════════════════════════════════════
+// MODE
+// ════════════════════════════════════════
 function setMode(m) {
     mode = m;
+    const p1 = document.getElementById('panel1');
     const p2 = document.getElementById('panel2');
-    if (m === 'compare') {
-        p2.style.display = 'flex'; p2.style.flexDirection = 'column';
-        document.getElementById('btnCompare').classList.add('active');
-        document.getElementById('btnSingle').classList.remove('active');
-        document.body.classList.add('compare-mode');
-    } else {
-        p2.style.display = 'none';
-        document.getElementById('btnSingle').classList.add('active');
-        document.getElementById('btnCompare').classList.remove('active');
-        document.body.classList.remove('compare-mode');
-    }
+    const sb = document.getElementById('syncBtn');
+
+    document.getElementById('modeA').classList.toggle('active',  m === 'a');
+    document.getElementById('modeAB').classList.toggle('active', m === 'ab');
+    document.getElementById('modeB').classList.toggle('active',  m === 'b');
+
+    p1.style.display = (m === 'a' || m === 'ab') ? 'flex' : 'none';
+    if (p1.style.display === 'flex') p1.style.flexDirection = 'column';
+    p2.style.display = (m === 'b' || m === 'ab') ? 'flex' : 'none';
+    if (p2.style.display === 'flex') p2.style.flexDirection = 'column';
+
+    sb.style.display = (m === 'ab') ? '' : 'none';
+
+    // Set default activePanel
+    activePanel = (m === 'b') ? 2 : 1;
     setTimeout(() => [1,2].forEach(resizeCanvas), 60);
 }
 
-// ═══════════════════════════════════════════════
-// Video loading
-// ═══════════════════════════════════════════════
+// ════════════════════════════════════════
+// VIDEO LOADING
+// ════════════════════════════════════════
 function triggerLoad(p) { document.getElementById('fi'+p).click(); }
 
 function loadVideo(p, input) {
@@ -522,20 +521,19 @@ function loadVideo(p, input) {
     vid._blobUrl = url;
     vid.src = url; vid.load();
     document.getElementById('dz'+p).classList.add('hidden');
-    document.getElementById('filename'+p).textContent = file.name;
     vid.addEventListener('loadedmetadata', () => { resizeCanvas(p); updateTime(p); }, { once:true });
     input.value = '';
     showToast(`動画${p===1?'A':'B'}を読み込みました`);
 }
 
-// ═══════════════════════════════════════════════
-// Canvas
-// ═══════════════════════════════════════════════
+// ════════════════════════════════════════
+// CANVAS
+// ════════════════════════════════════════
 function initCanvas(p) {
-    const zoomWrap = document.getElementById('zoom'+p);
+    const zw  = document.getElementById('zoom'+p);
     const tmp = document.createElement('canvas');
     tmp.className = 'temp-canvas';
-    zoomWrap.appendChild(tmp);
+    zw.appendChild(tmp);
     ds[p].tmp = tmp;
     resizeCanvas(p);
     setupDraw(p);
@@ -547,7 +545,6 @@ function resizeCanvas(p) {
     const tmp = ds[p].tmp;
     const W = wrapper.offsetWidth, H = wrapper.offsetHeight;
     if (!W || !H) return;
-
     const ctx = canvas.getContext('2d');
     let saved = null;
     if (canvas.width > 0 && canvas.height > 0) {
@@ -558,397 +555,295 @@ function resizeCanvas(p) {
     if (saved) {
         const t = document.createElement('canvas');
         t.width = saved.width; t.height = saved.height;
-        t.getContext('2d').putImageData(saved, 0, 0);
-        ctx.drawImage(t, 0, 0, W, H);
+        t.getContext('2d').putImageData(saved,0,0);
+        ctx.drawImage(t,0,0,W,H);
     }
 }
 
-// ═══════════════════════════════════════════════
-// Drawing + Pinch Zoom
-// ═══════════════════════════════════════════════
+// ════════════════════════════════════════
+// DRAWING + PINCH
+// ════════════════════════════════════════
 function setupDraw(p) {
     const canvas = document.getElementById('canvas'+p);
 
-    // Mouse
-    canvas.addEventListener('mousedown',  e => { e.preventDefault(); startDraw(p, e); });
-    canvas.addEventListener('mousemove',  e => { e.preventDefault(); moveDraw(p, e); });
-    canvas.addEventListener('mouseup',    e => { e.preventDefault(); endDraw(p, e); });
-    canvas.addEventListener('mouseleave', e => { if (drawing && activePanel===p) endDraw(p, e); });
-    // Mouse wheel zoom
+    canvas.addEventListener('mousedown',  e => { e.preventDefault(); activePanel=p; startDraw(p,e); });
+    canvas.addEventListener('mousemove',  e => { e.preventDefault(); moveDraw(p,e); });
+    canvas.addEventListener('mouseup',    e => { e.preventDefault(); endDraw(p,e); });
+    canvas.addEventListener('mouseleave', e => { if(drawing && activePanel===p) endDraw(p,e); });
     canvas.addEventListener('wheel', e => {
-        e.preventDefault();
-        activePanel = p;
-        adjustZoom(p, e.deltaY < 0 ? 0.2 : -0.2);
-    }, { passive: false });
+        e.preventDefault(); activePanel=p;
+        adjustZoom(p, e.deltaY<0 ? 0.2 : -0.2);
+    }, {passive:false});
 
-    // Touch
     canvas.addEventListener('touchstart', e => {
-        e.preventDefault();
-        activePanel = p;
-        if (e.touches.length >= 2) {
-            // Cancel any ongoing draw
-            if (drawing && activePanel === p) { drawing = false; }
-            startPinch(p, e);
-        } else if (e.touches.length === 1 && !zm[p].pinching && !zm[p].justPinched) {
-            startDraw(p, e.touches[0]);
-        }
-    }, { passive: false });
-
+        e.preventDefault(); activePanel=p;
+        if (e.touches.length >= 2) { if(drawing) drawing=false; startPinch(p,e); }
+        else if (e.touches.length===1 && !zm[p].pinching && !zm[p].justPinched) startDraw(p,e.touches[0]);
+    }, {passive:false});
     canvas.addEventListener('touchmove', e => {
         e.preventDefault();
-        if (e.touches.length >= 2) {
-            movePinch(p, e);
-        } else if (e.touches.length === 1 && !zm[p].pinching && !zm[p].justPinched) {
-            moveDraw(p, e.touches[0]);
-        }
-    }, { passive: false });
-
+        if (e.touches.length >= 2) movePinch(p,e);
+        else if (!zm[p].pinching && !zm[p].justPinched) moveDraw(p,e.touches[0]);
+    }, {passive:false});
     canvas.addEventListener('touchend', e => {
         e.preventDefault();
         if (zm[p].pinching) {
-            if (e.touches.length < 2) {
-                zm[p].pinching = false;
-                zm[p].justPinched = true;
-                setTimeout(() => { zm[p].justPinched = false; }, 300);
-            }
-        } else if (!zm[p].justPinched && e.changedTouches.length >= 1) {
-            endDraw(p, e.changedTouches[0]);
-        }
-    }, { passive: false });
+            if (e.touches.length<2) { zm[p].pinching=false; zm[p].justPinched=true; setTimeout(()=>zm[p].justPinched=false,300); }
+        } else if (!zm[p].justPinched) endDraw(p, e.changedTouches[0]);
+    }, {passive:false});
 }
 
-// ── Coordinate helper ──
 function getPos(p, ev) {
     const c = document.getElementById('canvas'+p);
     const r = c.getBoundingClientRect();
-    return {
-        x: (ev.clientX - r.left) * (c.width  / r.width),
-        y: (ev.clientY - r.top)  * (c.height / r.height)
-    };
+    return { x:(ev.clientX-r.left)*(c.width/r.width), y:(ev.clientY-r.top)*(c.height/r.height) };
 }
 
-// ── Draw ──
 function startDraw(p, ev) {
-    activePanel = p;
-    drawing = true;
-    const { x, y } = getPos(p, ev);
-    const s = ds[p];
-    s.sx = x; s.sy = y; s.lx = x; s.ly = y;
-
-    const canvas = document.getElementById('canvas'+p);
+    drawing=true;
+    const {x,y} = getPos(p,ev); const s=ds[p];
+    s.sx=x; s.sy=y; s.lx=x; s.ly=y;
+    const canvas=document.getElementById('canvas'+p);
     s.history.push(canvas.toDataURL());
-    if (s.history.length > 25) s.history.shift();
-
-    if (tool === 'pen' || tool === 'eraser') {
-        const ctx = canvas.getContext('2d');
-        ctx.beginPath(); ctx.moveTo(x, y);
-    }
+    if(s.history.length>25) s.history.shift();
+    if(tool==='pen'||tool==='eraser') { const ctx=canvas.getContext('2d'); ctx.beginPath(); ctx.moveTo(x,y); }
 }
 
 function moveDraw(p, ev) {
-    if (!drawing || activePanel !== p) return;
-    const { x, y } = getPos(p, ev);
-    const s = ds[p];
-    const canvas = document.getElementById('canvas'+p);
-    const ctx = canvas.getContext('2d');
-    const tmp = s.tmp;
-    const tCtx = tmp ? tmp.getContext('2d') : null;
-
-    if (tool === 'pen') {
-        ctx.globalCompositeOperation = 'source-over';
-        ctx.strokeStyle = color; ctx.lineWidth = brushSize;
-        ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-        ctx.lineTo(x, y); ctx.stroke();
-    } else if (tool === 'eraser') {
-        ctx.globalCompositeOperation = 'destination-out';
-        ctx.lineWidth = brushSize * 5; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-        ctx.lineTo(x, y); ctx.stroke();
-    } else if (tCtx) {
-        tCtx.clearRect(0, 0, tmp.width, tmp.height);
-        tCtx.strokeStyle = color; tCtx.fillStyle = color;
-        tCtx.lineWidth = brushSize; tCtx.lineCap = 'round';
-        drawShape(tCtx, tool, s.sx, s.sy, x, y);
+    if(!drawing||activePanel!==p) return;
+    const {x,y}=getPos(p,ev); const s=ds[p];
+    const canvas=document.getElementById('canvas'+p); const ctx=canvas.getContext('2d');
+    const tmp=s.tmp; const tCtx=tmp?tmp.getContext('2d'):null;
+    if(tool==='pen') {
+        ctx.globalCompositeOperation='source-over';
+        ctx.strokeStyle=color; ctx.lineWidth=brushSize;
+        ctx.lineCap='round'; ctx.lineJoin='round';
+        ctx.lineTo(x,y); ctx.stroke();
+    } else if(tool==='eraser') {
+        ctx.globalCompositeOperation='destination-out';
+        ctx.lineWidth=brushSize*5; ctx.lineCap='round'; ctx.lineJoin='round';
+        ctx.lineTo(x,y); ctx.stroke();
+    } else if(tCtx) {
+        tCtx.clearRect(0,0,tmp.width,tmp.height);
+        tCtx.strokeStyle=color; tCtx.fillStyle=color;
+        tCtx.lineWidth=brushSize; tCtx.lineCap='round';
+        drawShape(tCtx,tool,s.sx,s.sy,x,y);
     }
-    s.lx = x; s.ly = y;
+    s.lx=x; s.ly=y;
 }
 
 function endDraw(p, ev) {
-    if (!drawing || activePanel !== p) return;
-    drawing = false;
-    const { x, y } = getPos(p, ev);
-    const s = ds[p];
-    const canvas = document.getElementById('canvas'+p);
-    const ctx = canvas.getContext('2d');
-
-    if (tool !== 'pen' && tool !== 'eraser') {
-        ctx.globalCompositeOperation = 'source-over';
-        ctx.strokeStyle = color; ctx.fillStyle = color;
-        ctx.lineWidth = brushSize; ctx.lineCap = 'round';
-        drawShape(ctx, tool, s.sx, s.sy, x, y);
+    if(!drawing||activePanel!==p) return;
+    drawing=false;
+    const {x,y}=getPos(p,ev); const s=ds[p];
+    const canvas=document.getElementById('canvas'+p); const ctx=canvas.getContext('2d');
+    if(tool!=='pen'&&tool!=='eraser') {
+        ctx.globalCompositeOperation='source-over';
+        ctx.strokeStyle=color; ctx.fillStyle=color;
+        ctx.lineWidth=brushSize; ctx.lineCap='round';
+        drawShape(ctx,tool,s.sx,s.sy,x,y);
     }
-    if (s.tmp) s.tmp.getContext('2d').clearRect(0, 0, s.tmp.width, s.tmp.height);
-    ctx.globalCompositeOperation = 'source-over';
+    if(s.tmp) s.tmp.getContext('2d').clearRect(0,0,s.tmp.width,s.tmp.height);
+    ctx.globalCompositeOperation='source-over';
 }
 
-function drawShape(ctx, t, x1, y1, x2, y2) {
+function drawShape(ctx,t,x1,y1,x2,y2) {
     ctx.beginPath();
-    if (t === 'line') {
-        ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
-    } else if (t === 'arrow') {
-        const angle = Math.atan2(y2-y1, x2-x1);
-        const head = Math.max(12, brushSize*5);
+    if(t==='line')  { ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke(); }
+    else if(t==='arrow') {
+        const a=Math.atan2(y2-y1,x2-x1), h=Math.max(12,brushSize*5);
         ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
         ctx.beginPath();
         ctx.moveTo(x2,y2);
-        ctx.lineTo(x2-head*Math.cos(angle-Math.PI/6), y2-head*Math.sin(angle-Math.PI/6));
-        ctx.lineTo(x2-head*Math.cos(angle+Math.PI/6), y2-head*Math.sin(angle+Math.PI/6));
+        ctx.lineTo(x2-h*Math.cos(a-Math.PI/6), y2-h*Math.sin(a-Math.PI/6));
+        ctx.lineTo(x2-h*Math.cos(a+Math.PI/6), y2-h*Math.sin(a+Math.PI/6));
         ctx.closePath(); ctx.fill();
-    } else if (t === 'circle') {
-        const rx = Math.abs(x2-x1)/2, ry = Math.abs(y2-y1)/2;
-        ctx.ellipse((x1+x2)/2, (y1+y2)/2, Math.max(rx,1), Math.max(ry,1), 0, 0, Math.PI*2);
-        ctx.stroke();
-    } else if (t === 'rect') {
-        ctx.strokeRect(x1, y1, x2-x1, y2-y1);
-    }
+    } else if(t==='circle') {
+        const rx=Math.abs(x2-x1)/2, ry=Math.abs(y2-y1)/2;
+        ctx.ellipse((x1+x2)/2,(y1+y2)/2,Math.max(rx,1),Math.max(ry,1),0,0,Math.PI*2); ctx.stroke();
+    } else if(t==='rect') { ctx.strokeRect(x1,y1,x2-x1,y2-y1); }
 }
 
-// ── Undo / Clear ──
 function undoDraw() {
-    const p = activePanel, s = ds[p];
-    if (s.history.length === 0) { showToast('これ以上元に戻せません'); return; }
+    const p=activePanel, s=ds[p];
+    if(!s.history.length) { showToast('これ以上元に戻せません'); return; }
     s.history.pop();
-    const canvas = document.getElementById('canvas'+p);
-    const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    if (s.history.length > 0) {
-        const img = new Image();
-        img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        img.src = s.history[s.history.length-1];
-    }
+    const canvas=document.getElementById('canvas'+p); const ctx=canvas.getContext('2d');
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    if(s.history.length) { const img=new Image(); img.onload=()=>ctx.drawImage(img,0,0,canvas.width,canvas.height); img.src=s.history[s.history.length-1]; }
     showToast('元に戻しました');
 }
 
-function clearDraw() {
-    clearPanelDraw(activePanel);
-}
-
 function clearPanelDraw(p) {
-    const canvas = document.getElementById('canvas'+p);
-    canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
-    ds[p].history = [];
-    activePanel = p;
+    const canvas=document.getElementById('canvas'+p);
+    canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
+    ds[p].history=[]; activePanel=p;
     showToast(`パネル${p===1?'A':'B'}の描画をクリア`);
 }
 
-// ═══════════════════════════════════════════════
-// Pinch Zoom / Pan
-// ═══════════════════════════════════════════════
-function touchDist(e) {
-    const dx = e.touches[0].clientX - e.touches[1].clientX;
-    const dy = e.touches[0].clientY - e.touches[1].clientY;
-    return Math.sqrt(dx*dx + dy*dy);
-}
-function touchMid(e) {
-    return {
-        x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
-        y: (e.touches[0].clientY + e.touches[1].clientY) / 2
-    };
-}
-
-function startPinch(p, e) {
-    const z = zm[p];
-    z.pinching = true;
-    z.lastDist = touchDist(e);
-    const mid = touchMid(e);
-    z.lastMidX = mid.x; z.lastMidY = mid.y;
-}
-
-function movePinch(p, e) {
-    const z = zm[p];
-    if (!z.pinching) return;
-
-    const newDist = touchDist(e);
-    const mid = touchMid(e);
-
-    // Scale
-    const ratio = newDist / z.lastDist;
-    const newScale = Math.max(0.5, Math.min(6, z.scale * ratio));
-
-    // Pan: shift by midpoint movement
-    z.panX += mid.x - z.lastMidX;
-    z.panY += mid.y - z.lastMidY;
-
-    z.scale = newScale;
-    z.lastDist = newDist;
-    z.lastMidX = mid.x; z.lastMidY = mid.y;
-
-    clampPan(p);
-    applyZoom(p);
-}
-
-// ── Zoom buttons ──
-function adjustZoom(p, delta) {
-    const z = zm[p];
-    z.scale = Math.max(0.5, Math.min(6, z.scale + delta));
-    clampPan(p);
-    applyZoom(p);
-}
-
-function resetZoom(p) {
-    const z = zm[p];
-    z.scale = 1; z.panX = 0; z.panY = 0;
-    applyZoom(p);
-    showToast('ズームをリセット');
-}
-
-function clampPan(p) {
-    const z = zm[p];
-    const wrapper = document.getElementById('wrapper'+p);
-    const W = wrapper.offsetWidth, H = wrapper.offsetHeight;
-    const maxX = W * (z.scale - 1) / 2;
-    const maxY = H * (z.scale - 1) / 2;
-    z.panX = Math.max(-maxX, Math.min(maxX, z.panX));
-    z.panY = Math.max(-maxY, Math.min(maxY, z.panY));
-}
-
-function applyZoom(p) {
-    const z = zm[p];
-    const wrap = document.getElementById('zoom'+p);
-    wrap.style.transform = `translate(${z.panX}px, ${z.panY}px) scale(${z.scale})`;
-    const ind = document.getElementById('zind'+p);
-    const pct = Math.round(z.scale * 100);
-    ind.textContent = pct + '%';
-    ind.className = 'zoom-badge' + (z.scale !== 1 ? ' zoomed' : '');
-}
-
-// ═══════════════════════════════════════════════
-// Tools / Color
-// ═══════════════════════════════════════════════
+// ════════════════════════════════════════
+// TOOLS / COLOR
+// ════════════════════════════════════════
 function setTool(t) {
-    tool = t;
-    document.querySelectorAll('#sidebar .tool-btn').forEach(b => b.classList.remove('active'));
-    const btn = document.getElementById('tool-'+t);
-    if (btn) btn.classList.add('active');
-    // Update cursor via body class
-    document.body.className = document.body.className
-        .replace(/\btool-\S+/g, '').trim() + ' tool-' + t;
+    tool=t;
+    document.querySelectorAll('.tool-btn').forEach(b=>b.classList.remove('active'));
+    const b=document.getElementById('tool-'+t); if(b) b.classList.add('active');
+    document.body.className = document.body.className.replace(/\btool-\S+/g,'').trim()+' tool-'+t;
 }
-
 function setColor(el) {
-    color = el.dataset.c;
-    document.querySelectorAll('.color-dot').forEach(b => b.classList.remove('active'));
+    color=el.dataset.c;
+    document.querySelectorAll('.cdot').forEach(b=>b.classList.remove('active'));
     el.classList.add('active');
 }
 
-// ═══════════════════════════════════════════════
-// Video Events
-// ═══════════════════════════════════════════════
-function initVideoEvents(p) {
-    const vid = document.getElementById('video'+p);
-    const seek = document.getElementById('seek'+p);
+// ════════════════════════════════════════
+// ZOOM
+// ════════════════════════════════════════
+function toggleZoomPopup() {
+    zoomPopupOpen=!zoomPopupOpen;
+    document.getElementById('zoomPopup').classList.toggle('hidden',!zoomPopupOpen);
+    if(zoomPopupOpen) updateZoomPopup(activePanel);
+}
+function hideZoomPopup() { zoomPopupOpen=false; document.getElementById('zoomPopup').classList.add('hidden'); }
 
-    vid.addEventListener('timeupdate', () => {
-        if (seekingPanel === p) return;
-        const pct = vid.duration ? vid.currentTime / vid.duration * 1000 : 0;
-        seek.value = pct;
+function updateZoomPopup(p) {
+    const pct=Math.round(zm[p].scale*100);
+    document.getElementById('zoomLabel').textContent=`ズーム: ${pct}%`;
+    document.getElementById('zoomSlider').value=pct;
+}
+
+function adjustZoom(p, delta) {
+    zm[p].scale=Math.max(0.5,Math.min(6,zm[p].scale+delta));
+    clampPan(p); applyZoom(p);
+}
+function setZoomValue(p, pct) {
+    zm[p].scale=Math.max(0.5,Math.min(6,pct/100));
+    clampPan(p); applyZoom(p);
+}
+function resetZoom(p) {
+    const z=zm[p]; z.scale=1; z.panX=0; z.panY=0;
+    applyZoom(p); showToast('ズームをリセット'); hideZoomPopup();
+}
+function clampPan(p) {
+    const z=zm[p], w=document.getElementById('wrapper'+p);
+    const W=w.offsetWidth, H=w.offsetHeight;
+    const mx=W*(z.scale-1)/2, my=H*(z.scale-1)/2;
+    z.panX=Math.max(-mx,Math.min(mx,z.panX));
+    z.panY=Math.max(-my,Math.min(my,z.panY));
+}
+function applyZoom(p) {
+    const z=zm[p];
+    document.getElementById('zoom'+p).style.transform=`translate(${z.panX}px,${z.panY}px) scale(${z.scale})`;
+    const pct=Math.round(z.scale*100);
+    const ind=document.getElementById('zind'+p);
+    ind.textContent=pct+'%';
+    ind.className='zoom-badge'+(z.scale!==1?' zoomed':'');
+    if(zoomPopupOpen) updateZoomPopup(activePanel);
+}
+
+// Pinch
+function touchDist(e) { const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY; return Math.sqrt(dx*dx+dy*dy); }
+function touchMid(e)  { return { x:(e.touches[0].clientX+e.touches[1].clientX)/2, y:(e.touches[0].clientY+e.touches[1].clientY)/2 }; }
+
+function startPinch(p,e) {
+    const z=zm[p]; z.pinching=true; z.lastDist=touchDist(e);
+    const m=touchMid(e); z.lastMidX=m.x; z.lastMidY=m.y;
+}
+function movePinch(p,e) {
+    const z=zm[p]; if(!z.pinching) return;
+    const nd=touchDist(e), m=touchMid(e);
+    z.scale=Math.max(0.5,Math.min(6,z.scale*(nd/z.lastDist)));
+    z.panX+=m.x-z.lastMidX; z.panY+=m.y-z.lastMidY;
+    z.lastDist=nd; z.lastMidX=m.x; z.lastMidY=m.y;
+    clampPan(p); applyZoom(p);
+}
+
+// ════════════════════════════════════════
+// VIDEO EVENTS
+// ════════════════════════════════════════
+function initVideoEvents(p) {
+    const vid=document.getElementById('video'+p);
+    const seek=document.getElementById('seek'+p);
+    vid.addEventListener('timeupdate',()=>{
+        if(seekingPanel===p) return;
+        seek.value=vid.duration?vid.currentTime/vid.duration*1000:0;
         updateTime(p);
-        // Sync B ← A
-        if (syncMode && p === 1 && mode === 'compare') {
-            const v2 = document.getElementById('video2');
-            if (v2.duration && Math.abs(v2.currentTime - vid.currentTime) > 0.08)
-                v2.currentTime = Math.min(vid.currentTime, v2.duration);
+        if(syncMode&&p===1&&mode==='ab') {
+            const v2=document.getElementById('video2');
+            if(v2.duration&&Math.abs(v2.currentTime-vid.currentTime)>0.08)
+                v2.currentTime=Math.min(vid.currentTime,v2.duration);
         }
     });
-
-    seek.addEventListener('input', () => {
-        seekingPanel = p;
-        if (vid.duration) vid.currentTime = (seek.value / 1000) * vid.duration;
+    seek.addEventListener('input',()=>{
+        seekingPanel=p;
+        if(vid.duration) vid.currentTime=(seek.value/1000)*vid.duration;
         updateTime(p);
     });
-    seek.addEventListener('change', () => { seekingPanel = 0; });
-
-    vid.addEventListener('play',  () => { updatePlayBtns(p); });
-    vid.addEventListener('pause', () => { updatePlayBtns(p); });
-    vid.addEventListener('ended', () => { updatePlayBtns(p); });
+    seek.addEventListener('change',()=>{ seekingPanel=0; });
+    vid.addEventListener('play',  ()=>updatePlayBtns(p));
+    vid.addEventListener('pause', ()=>updatePlayBtns(p));
+    vid.addEventListener('ended', ()=>updatePlayBtns(p));
 }
 
 function updateTime(p) {
-    const vid = document.getElementById('video'+p);
-    document.getElementById('time'+p).textContent = `${ft(vid.currentTime)} / ${ft(vid.duration||0)}`;
+    const vid=document.getElementById('video'+p);
+    document.getElementById('time'+p).textContent=`${ft(vid.currentTime)} / ${ft(vid.duration||0)}`;
 }
-
 function ft(s) {
-    if (!isFinite(s) || s < 0) return '0:00';
+    if(!isFinite(s)||s<0) return '0:00';
     return `${Math.floor(s/60)}:${Math.floor(s%60).toString().padStart(2,'0')}`;
 }
-
 function updatePlayBtns(p) {
-    const vid = document.getElementById('video'+p);
-    const paused = vid.paused;
-    const pBtn = document.getElementById('pplay'+p);
-    if (pBtn) pBtn.textContent = paused ? '▶' : '⏸';
-    // Global button reflects panel A
-    if (p === 1) document.getElementById('playBtn').textContent = paused ? '▶' : '⏸';
+    const paused=document.getElementById('video'+p).paused;
+    const pb=document.getElementById('pplay'+p); if(pb) pb.textContent=paused?'▶':'⏸';
+    // Global play button tracks the primary panel
+    const primary=(mode==='b')?2:1;
+    if(p===primary) document.getElementById('playBtn').textContent=paused?'▶':'⏸';
 }
 
-// ═══════════════════════════════════════════════
-// Per-panel Playback
-// ═══════════════════════════════════════════════
+// ════════════════════════════════════════
+// PLAYBACK
+// ════════════════════════════════════════
 function togglePanelPlay(p) {
-    const vid = document.getElementById('video'+p);
-    if (!vid.src || !vid.duration) { showToast('動画を読み込んでください'); return; }
-    vid.paused ? vid.play() : vid.pause();
+    const vid=document.getElementById('video'+p);
+    if(!vid.src||!vid.duration) { showToast('動画を読み込んでください'); return; }
+    vid.paused?vid.play():vid.pause();
 }
-
 function stepPanelFrame(p, n) {
-    const vid = document.getElementById('video'+p);
-    if (!vid.src || !vid.duration) return;
+    const vid=document.getElementById('video'+p);
+    if(!vid.src||!vid.duration) return;
     vid.pause();
-    vid.currentTime = Math.max(0, Math.min(vid.duration, vid.currentTime + n/FPS));
+    vid.currentTime=Math.max(0,Math.min(vid.duration,vid.currentTime+n/FPS));
 }
+function setPanelSpeed(p, r) { document.getElementById('video'+p).playbackRate=parseFloat(r); }
 
-function setPanelSpeed(p, r) {
-    document.getElementById('video'+p).playbackRate = parseFloat(r);
-}
-
-// ═══════════════════════════════════════════════
-// Global Playback (Panel A + sync)
-// ═══════════════════════════════════════════════
 function togglePlay() {
-    const v1 = document.getElementById('video1');
-    if (!v1.src) { showToast('動画Aを読み込んでください'); return; }
-    const paused = v1.paused;
-    paused ? v1.play() : v1.pause();
-    if (syncMode && mode === 'compare') {
-        const v2 = document.getElementById('video2');
-        if (v2.src) paused ? v2.play() : v2.pause();
+    const primary=(mode==='b')?2:1;
+    const vid=document.getElementById('video'+primary);
+    if(!vid.src||!vid.duration) { showToast('動画を読み込んでください'); return; }
+    const paused=vid.paused;
+    paused?vid.play():vid.pause();
+    if(syncMode&&mode==='ab') {
+        const v2=document.getElementById('video'+  (primary===1?2:1));
+        if(v2.src) paused?v2.play():v2.pause();
     }
 }
 
-function stepFrame(n) {
-    stepPanelFrame(1, n);
-    if (syncMode && mode === 'compare') stepPanelFrame(2, n);
+function toggleSync() {
+    syncMode=!syncMode;
+    const btn=document.getElementById('syncBtn');
+    btn.classList.toggle('active',syncMode);
+    showToast(syncMode?'同期再生 ON':'同期再生 OFF');
 }
 
-function setSpeed(r) {
-    const rate = parseFloat(r);
-    [1,2].forEach(p => { document.getElementById('video'+p).playbackRate = rate; });
-}
-
-function setSyncMode(on) {
-    syncMode = on;
-    showToast(on ? '同期再生 ON' : '同期再生 OFF');
-}
-
-// ═══════════════════════════════════════════════
-// Toast
-// ═══════════════════════════════════════════════
-let toastTimer;
+// ════════════════════════════════════════
+// TOAST
+// ════════════════════════════════════════
+let _tt;
 function showToast(msg) {
-    const el = document.getElementById('toast');
-    el.textContent = msg; el.classList.add('show');
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+    const el=document.getElementById('toast');
+    el.textContent=msg; el.classList.add('show');
+    clearTimeout(_tt); _tt=setTimeout(()=>el.classList.remove('show'),2200);
 }
 </script>
 </body>
