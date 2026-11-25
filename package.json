@@ -1,0 +1,27 @@
+{
+  "name": "coach-video",
+  "version": "1.0.0",
+  "description": "",
+  "main": "sw.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://xxxwwn-dot@github.com/xxxwwn-dot/coach-video.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/xxxwwn-dot/coach-video/issues"
+  },
+  "homepage": "https://github.com/xxxwwn-dot/coach-video#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.65.1"
+  }
+}

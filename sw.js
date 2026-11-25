@@ -1,6 +1,6 @@
 // コーチビデオ Service Worker
 // キャッシュバージョンを更新するとすべての古いキャッシュが削除されます
-const CACHE_VERSION = 'v3';
+const CACHE_VERSION = 'v4';
 const CACHE_NAME = 'coach-video-' + CACHE_VERSION;
 
 const URLS_TO_CACHE = [
@@ -10,13 +10,24 @@ const URLS_TO_CACHE = [
 ];
 
 // インストール: アプリアセットをキャッシュ
+// NOTE: skipWaiting() は install 時に自動では呼ばない。
+// ユーザーが「再読み込み」ボタンを押した時に SKIP_WAITING メッセージで呼ぶ。
+// これにより、解析中の動画を失わないようにする。
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => cache.addAll(URLS_TO_CACHE))
-      .then(() => self.skipWaiting())
       .catch(err => console.warn('[SW] Cache install failed:', err))
+    // skipWaiting()はここでは呼ばない — waitingのままにする
   );
+});
+
+// メッセージ: ページからの SKIP_WAITING 要求
+// ユーザーが更新バナーの「再読み込み」を押した場合のみ呼ばれる
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 // アクティベート: 古いバージョンのキャッシュを削除
