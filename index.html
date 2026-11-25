@@ -368,7 +368,24 @@
     </div>
 
     <div style="flex:1"></div>
+    <span id="versionLabel" style="font-size:9px;color:var(--icon-dim);opacity:0.5;flex-shrink:0;white-space:nowrap;padding-right:4px">v2.1</span>
     <button id="playBtn" onclick="togglePlay()">▶</button>
+</div>
+
+<!-- Update notification banner (hidden until SW update detected) -->
+<div id="updateBanner" class="hidden" style="
+    background:#0d2510; color:#7ec87e; padding:5px 12px;
+    font-size:11px; display:flex; align-items:center; gap:8px;
+    border-bottom:1px solid #1a4020; flex-shrink:0;
+">
+    <span>🔄 新しいバージョンが利用可能です</span>
+    <button onclick="location.reload()" style="
+        background:#1a3a1a; border:1px solid #2a5a2a; color:#90d890;
+        padding:2px 10px; border-radius:5px; font-size:10px; cursor:pointer;
+    ">再読み込み</button>
+    <button onclick="document.getElementById('updateBanner').classList.add('hidden')" style="
+        background:none; border:none; color:#4a8a4a; cursor:pointer; margin-left:auto; font-size:14px;
+    ">×</button>
 </div>
 
 <!-- ══════════════════════════════
@@ -480,6 +497,8 @@
 // ════════════════════════════════════════
 // STATE
 // ════════════════════════════════════════
+const APP_VERSION = '2.1';
+
 let mode        = 'a';
 let tool        = 'pen';
 let color       = '#ef4444';
@@ -491,10 +510,22 @@ let seekingPanel = 0;
 let zoomPopupOpen = false;
 
 // Per-panel state: FPS detection
+// fpsDetected=true means confirmed by rVFC with presentedFrames
+// fpsDetected=false means unknown / estimated / rVFC unavailable
 const panelState = {
-    1: { fps: 30, fpsDetected: false, detecting: false },
-    2: { fps: 30, fpsDetected: false, detecting: false }
+    1: { fps: 30, fpsDetected: false, detecting: false, isVFR: false },
+    2: { fps: 30, fpsDetected: false, detecting: false, isVFR: false }
 };
+
+// Frame timestamp cache: sorted array of mediaTime values observed via rVFC
+// Used for precise frame stepping when cache is populated
+const frameCache = {
+    1: { times: [] },
+    2: { times: [] }
+};
+
+// Pending steps during active seek (prevents seek request accumulation)
+const pendingSteps = { 1: 0, 2: 0 };
 
 // Sync anchor points (currentTime of each panel when anchor was set)
 const syncPoints = { 1: null, 2: null };
@@ -532,12 +563,35 @@ window.addEventListener('DOMContentLoaded', () => {
     });
     window.addEventListener('resize', () => [1,2].forEach(p => resizeCanvas(p)));
 
-    // Service Worker registration
+    // Stop long press when app goes to background
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) stopLP();
+    });
+
+    // Stop long press on orientation change
+    window.addEventListener('orientationchange', () => stopLP());
+
+    // Service Worker registration + update detection
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('./sw.js', { scope: './' })
-                .then(r => console.log('[SW] registered, scope:', r.scope))
+                .then(reg => {
+                    console.log('[SW] registered, scope:', reg.scope);
+                    // Detect new SW version
+                    reg.addEventListener('updatefound', () => {
+                        const nw = reg.installing;
+                        nw.addEventListener('statechange', () => {
+                            if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+                                document.getElementById('updateBanner').classList.remove('hidden');
+                            }
+                        });
+                    });
+                })
                 .catch(e => console.warn('[SW] register failed:', e));
+            // Also handle controller change (SW activated)
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                document.getElementById('updateBanner').classList.remove('hidden');
+            });
         });
     }
 });
@@ -553,11 +607,15 @@ function stopLP() {
 
 function setupLP(el, fn) {
     if (!el) return;
+
     el.addEventListener('pointerdown', e => {
         e.preventDefault();
+        // setPointerCapture ensures we receive pointer events even when finger slides off button
+        // This allows pointermove to detect out-of-bounds movement reliably on iOS
+        try { el.setPointerCapture(e.pointerId); } catch(_) {}
         stopLP();
         lpActive = true;
-        fn(); // immediate single step
+        fn(); // immediate single step on first press
         lpHoldTimer = setTimeout(() => {
             lpHoldTimer = null;
             if (lpActive) {
@@ -567,11 +625,23 @@ function setupLP(el, fn) {
             }
         }, 300);
     });
-    // pointerleave fires when finger slides off button — stops repeat
-    el.addEventListener('pointerleave',  stopLP);
-    el.addEventListener('pointerup',     stopLP);
-    el.addEventListener('pointercancel', stopLP);
-    el.addEventListener('contextmenu',   e => e.preventDefault());
+
+    // pointermove: check if finger has moved significantly outside button bounds
+    // Required because setPointerCapture suppresses pointerleave in some browsers
+    el.addEventListener('pointermove', e => {
+        if (!lpActive) return;
+        const r = el.getBoundingClientRect();
+        const pad = 15; // 15px tolerance outside button
+        if (e.clientX < r.left - pad || e.clientX > r.right  + pad ||
+            e.clientY < r.top  - pad || e.clientY > r.bottom + pad) {
+            stopLP();
+        }
+    });
+
+    el.addEventListener('pointerup',          stopLP); // finger lifted
+    el.addEventListener('pointercancel',      stopLP); // e.g. system gesture
+    el.addEventListener('lostpointercapture', stopLP); // capture released
+    el.addEventListener('contextmenu',        e => e.preventDefault()); // prevent iOS context menu
 }
 
 function initLongPress() {
@@ -624,18 +694,24 @@ function loadVideo(p, input) {
     if (!file) return;
     const vid = document.getElementById('video'+p);
 
+    // Stop any active long-press when video is replaced
+    stopLP();
+
     // Show loading indicator
     document.getElementById('loading'+p).classList.remove('hidden');
 
     // Free previous blob URL to avoid memory leak
     if (vid._blobUrl) { URL.revokeObjectURL(vid._blobUrl); vid._blobUrl = null; }
 
-    // Reset per-panel FPS state
-    panelState[p].fps         = 30;
+    // Reset per-panel state: FPS unknown until detected via rVFC during playback
+    panelState[p].fps         = 30;   // default fallback, NOT a confirmed value
     panelState[p].fpsDetected = false;
     panelState[p].detecting   = false;
+    panelState[p].isVFR       = false;
+    frameCache[p].times       = [];   // clear frame timestamp cache
+    pendingSteps[p]           = 0;
     const fpsBadge = document.getElementById('fps'+p);
-    fpsBadge.textContent = '~fps';
+    fpsBadge.textContent = '~fps'; // "~" = unknown until rVFC detection completes
     fpsBadge.className = 'fps-badge hidden';
 
     const url = URL.createObjectURL(file);
@@ -675,46 +751,109 @@ function snapFPS(fps) {
 
 function startFPSDetection(p) {
     const vid = document.getElementById('video'+p);
+
     if (!('requestVideoFrameCallback' in HTMLVideoElement.prototype)) {
-        // Not supported — keep default 30fps, mark as "done"
-        panelState[p].fpsDetected = true;
+        // rVFC not supported on this browser/OS
+        // Keep fps=30 as a FALLBACK (not a detected value)
+        // Show "~fps" to indicate fps is UNKNOWN, NOT confirmed
         const badge = document.getElementById('fps'+p);
-        badge.textContent = '30fps*';
-        badge.className = 'fps-badge';
+        badge.textContent = '~fps';
+        badge.className = 'fps-badge'; // no 'detected' class
+        panelState[p].fpsDetected = false;
+        panelState[p].detecting   = false;
         return;
     }
 
-    const times = [];
+    // ── Algorithm: use presentedFrames (not just mediaTime intervals) ──
+    //
+    // WHY presentedFrames matters:
+    //   On a 60Hz display, rVFC fires once per display frame (~16.67ms).
+    //   For a 120fps video: each display frame presents 2 video frames.
+    //   presentedFrames increments by 2 per rVFC callback.
+    //   So: fps = presentedFramesDelta / mediaTimeDelta = 2 / (1/60) = 120 ✓
+    //
+    //   If we used only mediaTime diffs:
+    //   mediaTimeDelta ≈ 1/60s per callback → 1/avg = 60fps ✗ (wrong!)
+    //
+    // This correctly detects 120fps/240fps on 60Hz displays.
+
+    const measurements = []; // each = presentedFramesDelta / mediaTimeDelta (= native fps)
+    let lastPF = null;  // previous presentedFrames value
+    let lastMT = null;  // previous mediaTime in seconds
 
     function onFrame(_, meta) {
-        times.push(meta.mediaTime);
+        // Always cache the actual frame timestamp for precise stepping
+        cacheFrameTime(p, meta.mediaTime);
 
-        if (times.length >= 8) {
-            // Calculate intervals, filter outliers
-            const diffs = [];
-            for (let i = 1; i < times.length; i++) {
-                const d = times[i] - times[i-1];
-                if (d > 0.001 && d < 0.5) diffs.push(d);
+        if (lastPF !== null) {
+            const pfDelta   = meta.presentedFrames - lastPF;
+            const timeDelta = meta.mediaTime - lastMT;
+
+            // pfDelta = number of VIDEO frames presented since last callback
+            // timeDelta = elapsed video time since last callback
+            // pfDelta / timeDelta = native video fps
+            if (pfDelta > 0 && timeDelta > 0.001 && timeDelta < 0.5) {
+                measurements.push(pfDelta / timeDelta);
             }
-            panelState[p].detecting = false;
-            if (diffs.length >= 4) {
-                const avg = diffs.reduce((a,b)=>a+b,0) / diffs.length;
-                const fps = snapFPS(1 / avg);
-                panelState[p].fps = fps;
-                panelState[p].fpsDetected = true;
-                const badge = document.getElementById('fps'+p);
-                badge.textContent = fps + 'fps';
-                badge.className = 'fps-badge detected';
-            } else {
-                // Insufficient data — keep default
-                panelState[p].fpsDetected = true;
-            }
-        } else {
+        }
+
+        lastPF = meta.presentedFrames;
+        lastMT = meta.mediaTime;
+
+        if (measurements.length < 12) {
             vid.requestVideoFrameCallback(onFrame);
+        } else {
+            panelState[p].detecting = false;
+            finalizeDetection(p, measurements);
+            // Switch to continuous cache-building mode after detection
+            _continueCaching(p);
         }
     }
 
     vid.requestVideoFrameCallback(onFrame);
+}
+
+// Continuously cache frame timestamps during playback.
+// Called once detection is done; self-terminates when video pauses.
+// On next play(), the play-event handler restarts it.
+function _continueCaching(p) {
+    if (!('requestVideoFrameCallback' in HTMLVideoElement.prototype)) return;
+    const vid = document.getElementById('video'+p);
+    if (vid.paused || vid.ended) return;
+    function cacheFrame(_, meta) {
+        cacheFrameTime(p, meta.mediaTime);
+        // Keep going as long as the video is playing
+        if (!vid.paused && !vid.ended) vid.requestVideoFrameCallback(cacheFrame);
+    }
+    vid.requestVideoFrameCallback(cacheFrame);
+}
+
+function finalizeDetection(p, measurements) {
+    // Use median to filter outliers (e.g. frame drops at start)
+    const sorted = [...measurements].sort((a, b) => a - b);
+    const median = sorted[Math.floor(sorted.length / 2)];
+
+    // Check for VFR: if spread is >25% of median, it's likely variable frame rate
+    const lo = sorted[Math.floor(sorted.length * 0.1)];
+    const hi = sorted[Math.floor(sorted.length * 0.9)];
+    const isVFR = (hi - lo) > median * 0.25;
+
+    const badge = document.getElementById('fps'+p);
+
+    if (isVFR) {
+        panelState[p].isVFR       = true;
+        panelState[p].fpsDetected = false; // Cannot summarize VFR as single fps
+        badge.textContent = 'VFR';
+        badge.className   = 'fps-badge';
+        // For VFR, rely entirely on frameCache for stepping precision
+    } else {
+        const detectedFps = snapFPS(median);
+        panelState[p].fps         = detectedFps;
+        panelState[p].fpsDetected = true;
+        panelState[p].isVFR       = false;
+        badge.textContent = detectedFps + 'fps';
+        badge.className   = 'fps-badge detected';
+    }
 }
 
 // ════════════════════════════════════════
@@ -970,21 +1109,103 @@ function setColor(el) {
 }
 
 // ════════════════════════════════════════
-// FRAME STEPPING  (uses detected FPS)
+// FRAME TIMESTAMP CACHE
+// Built during rVFC callbacks while video plays.
+// Provides actual frame timestamps for precise seeking.
+// ════════════════════════════════════════
+const MAX_CACHE = 600; // max timestamps to keep in memory per panel
+
+function cacheFrameTime(p, t) {
+    const times = frameCache[p].times;
+    // Only add if meaningfully different from last entry (>0.1ms gap)
+    if (times.length === 0 || t > times[times.length - 1] + 0.0001) {
+        times.push(t);
+        // Keep memory bounded: trim oldest half when full
+        if (times.length > MAX_CACHE * 2) {
+            frameCache[p].times = times.slice(MAX_CACHE);
+        }
+    }
+}
+
+// Return the next frame time after `currentTime`
+// Falls back to fps-based estimate if not in cache
+function getNextFrameTime(p, currentTime) {
+    const times = frameCache[p].times;
+    // Binary search: first index with time > currentTime + epsilon
+    let lo = 0, hi = times.length;
+    while (lo < hi) {
+        const mid = (lo + hi) >>> 1;
+        if (times[mid] <= currentTime + 0.0001) lo = mid + 1;
+        else hi = mid;
+    }
+    if (lo < times.length) return times[lo]; // exact cache hit
+    // Not in cache: fall back to fps estimate
+    // For 29.97fps, use the proper fractional representation
+    const fps = panelState[p].fps;
+    if (fps === 29.97) return currentTime + 1001 / 30000;
+    if (fps === 59.94) return currentTime + 1001 / 60000;
+    return currentTime + 1 / fps;
+}
+
+// Return the previous frame time before `currentTime`
+// Falls back to fps-based estimate if not in cache
+function getPrevFrameTime(p, currentTime) {
+    const times = frameCache[p].times;
+    // Binary search: last index with time < currentTime - epsilon
+    let lo = 0, hi = times.length;
+    while (lo < hi) {
+        const mid = (lo + hi) >>> 1;
+        if (times[mid] < currentTime - 0.0001) lo = mid + 1;
+        else hi = mid;
+    }
+    if (lo > 0) return times[lo - 1]; // exact cache hit
+    // Not in cache: fall back to fps estimate
+    const fps = panelState[p].fps;
+    if (fps === 29.97) return Math.max(0, currentTime - 1001 / 30000);
+    if (fps === 59.94) return Math.max(0, currentTime - 1001 / 60000);
+    return Math.max(0, currentTime - 1 / fps);
+}
+
+// ════════════════════════════════════════
+// FRAME STEPPING
+// Uses frame cache for precision when available.
+// Falls back to fps-based estimate when cache is empty.
 // ════════════════════════════════════════
 function stepPanelFrame(p, n) {
     const vid = document.getElementById('video'+p);
     if (!vid.src || !vid.duration) return;
-    if (vid.seeking) return; // prevent seek request accumulation
 
     vid.pause();
-    const fps = panelState[p].fps;
-    const dt  = n / fps;
+
+    // If a seek is already in progress, accumulate the step and apply on seeked
+    if (vid.seeking) {
+        pendingSteps[p] = (pendingSteps[p] || 0) + n;
+        return;
+    }
+
+    // Apply any accumulated pending steps from previous seeks
+    const totalN = n + (pendingSteps[p] || 0);
+    pendingSteps[p] = 0;
+    if (totalN === 0) return;
 
     if (syncMode && mode === 'ab') {
+        // Sync mode: calculate time delta, then apply to both panels
+        let targetTime = vid.currentTime;
+        for (let i = 0; i < Math.abs(totalN); i++) {
+            targetTime = totalN > 0
+                ? getNextFrameTime(p, targetTime)
+                : getPrevFrameTime(p, targetTime);
+        }
+        const dt = targetTime - vid.currentTime;
         _stepSync(p, dt);
     } else {
-        vid.currentTime = Math.max(0, Math.min(vid.duration, vid.currentTime + dt));
+        let targetTime = vid.currentTime;
+        for (let i = 0; i < Math.abs(totalN); i++) {
+            targetTime = totalN > 0
+                ? getNextFrameTime(p, targetTime)
+                : getPrevFrameTime(p, targetTime);
+        }
+        vid.currentTime = Math.max(0, Math.min(vid.duration, targetTime));
     }
 }
 
@@ -1173,14 +1394,26 @@ function initVideoEvents(p) {
 
     vid.addEventListener('play', () => {
         updatePlayBtns(p);
-        // Start FPS detection on first play
         if (!panelState[p].fpsDetected && !panelState[p].detecting) {
+            // First play: run full detection (12 frames) + cache building
             panelState[p].detecting = true;
             startFPSDetection(p);
+        } else if (panelState[p].fpsDetected || panelState[p].isVFR) {
+            // Detection already done: resume continuous cache building
+            _continueCaching(p);
         }
     });
     vid.addEventListener('pause', () => updatePlayBtns(p));
     vid.addEventListener('ended', () => updatePlayBtns(p));
+
+    // Apply any frame steps that were buffered while vid.seeking was true
+    vid.addEventListener('seeked', () => {
+        const steps = pendingSteps[p];
+        if (steps) {
+            pendingSteps[p] = 0;
+            stepPanelFrame(p, steps);
+        }
+    });
 }
 
 function updateTime(p) {

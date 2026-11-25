@@ -1,6 +1,6 @@
 // コーチビデオ Service Worker
 // キャッシュバージョンを更新するとすべての古いキャッシュが削除されます
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v3';
 const CACHE_NAME = 'coach-video-' + CACHE_VERSION;
 
 const URLS_TO_CACHE = [
