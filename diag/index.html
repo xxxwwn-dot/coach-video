@@ -3,104 +3,192 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>動画読み込み診断</title>
+    <title>動画取得方式 比較診断</title>
     <!-- NO service worker, NO canvas, NO drawing - diagnostic only -->
     <style>
         :root {
-            --bg: #0a0a0a; --bar: #111; --txt: #c0c0a0;
-            --acc: #c8e830; --dim: #505030; --sep: #222;
-            --ok: #4ade80; --warn: #facc15; --err: #f87171;
+            --bg: #0a0a0a; --bar: #111; --bar2: #161610;
+            --txt: #c0c0a0; --dim: #505030; --sep: #222;
+            --acc: #c8e830; --acc2: #485800;
+            --ok: #4ade80; --warn: #facc15; --err: #f87171; --neu: #707050;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             background: var(--bg); color: var(--txt);
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            min-height: 100dvh; padding: 20px 16px;
+            padding: 16px 14px 40px; min-height: 100dvh;
         }
-        h1 { font-size: 18px; color: var(--acc); margin-bottom: 4px; }
-        .sub { font-size: 12px; color: var(--dim); margin-bottom: 20px; }
-        .note {
-            background: #111a00; border: 1px solid #304000;
-            border-radius: 8px; padding: 10px 12px;
-            font-size: 12px; color: #8a9050; line-height: 1.6;
-            margin-bottom: 20px;
-        }
-        .note b { color: var(--acc); }
+        h1 { font-size: 17px; color: var(--acc); margin-bottom: 2px; }
+        .sub { font-size: 11px; color: var(--dim); margin-bottom: 14px; }
 
-        .pick-area {
-            display: flex; gap: 10px; flex-wrap: wrap;
-            margin-bottom: 20px;
+        /* ── research note ── */
+        .research-box {
+            background: #0d1200; border: 1px solid #304000;
+            border-radius: 8px; padding: 10px 12px;
+            font-size: 11.5px; color: #8a9050; line-height: 1.65;
+            margin-bottom: 16px;
         }
+        .research-box b { color: var(--acc); }
+        .research-box .verdict { color: var(--warn); font-weight: 700; margin-top: 6px; }
+
+        /* ── comparison table ── */
+        .cmp-wrap {
+            overflow-x: auto; margin-bottom: 16px;
+        }
+        .cmp-table {
+            width: 100%; border-collapse: collapse;
+            font-size: 11px; min-width: 520px;
+        }
+        .cmp-table th {
+            background: #1a1a0a; color: var(--dim);
+            padding: 5px 7px; text-align: left;
+            border-bottom: 1px solid var(--sep);
+            font-weight: 700; white-space: nowrap;
+        }
+        .cmp-table td {
+            padding: 5px 7px; border-bottom: 1px solid #161610;
+            font-family: monospace; white-space: nowrap;
+        }
+        .cmp-table tr:last-child td { border-bottom: none; }
+        .cmp-table td:first-child { color: var(--dim); }
+        .c-ok   { color: var(--ok); }
+        .c-warn { color: var(--warn); }
+        .c-err  { color: var(--err); }
+        .c-dim  { color: var(--dim); }
+
+        /* ── test slots ── */
+        .slot {
+            border: 1px solid #252510;
+            border-radius: 10px; overflow: hidden;
+            margin-bottom: 10px;
+        }
+        .slot-hdr {
+            display: flex; align-items: center; gap: 8px;
+            padding: 10px 12px; cursor: pointer;
+            background: var(--bar);
+        }
+        .slot-hdr:active { background: #1a1a0a; }
+        .slot-num {
+            width: 22px; height: 22px; border-radius: 50%;
+            background: var(--acc2); color: var(--acc);
+            font-size: 12px; font-weight: 700;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .slot-title { flex: 1; font-size: 13px; font-weight: 700; }
+        .slot-status { font-size: 11px; font-family: monospace; color: var(--dim); }
+        .slot-toggle { font-size: 14px; color: var(--dim); }
+        .slot-body {
+            padding: 12px; display: none;
+            border-top: 1px solid var(--sep);
+            background: var(--bar2);
+        }
+        .slot-body.open { display: block; }
+
+        .accept-badge {
+            display: inline-block; background: #111;
+            border: 1px solid #3a3a18; color: #a0a060;
+            font-family: monospace; font-size: 11px;
+            padding: 2px 8px; border-radius: 4px; margin-bottom: 8px;
+        }
+        .slot-desc { font-size: 11px; color: var(--dim); margin-bottom: 10px; }
+
         .pick-btn {
             background: #1a1a0a; border: 1px solid #3a3a18;
-            color: var(--acc); padding: 12px 20px;
-            border-radius: 10px; font-size: 15px;
+            color: var(--acc); padding: 10px 18px;
+            border-radius: 9px; font-size: 14px;
             cursor: pointer; font-weight: 700;
+            display: inline-block; margin-bottom: 12px;
         }
         .pick-btn:active { background: #252d00; }
 
-        /* video element: hidden but needed to trigger browser events */
-        #vid { display: none; }
+        /* file info */
+        .file-row {
+            display: flex; gap: 6px; flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+        .ftag {
+            background: #111; border: 1px solid var(--sep);
+            border-radius: 5px; padding: 3px 8px;
+            font-size: 11px; font-family: monospace;
+        }
+        .ftag b { color: var(--txt); }
+        .ftag span { color: var(--dim); }
 
-        /* Results table */
-        .results {
-            background: var(--bar); border: 1px solid var(--sep);
-            border-radius: 10px; overflow: hidden;
-            margin-bottom: 20px;
+        /* metrics grid */
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 6px; margin-bottom: 10px;
         }
-        .row {
-            display: flex; align-items: baseline;
-            border-bottom: 1px solid var(--sep);
-            padding: 9px 12px; gap: 10px;
-            font-size: 13px;
+        .metric {
+            background: #111; border: 1px solid var(--sep);
+            border-radius: 7px; padding: 7px 10px;
         }
-        .row:last-child { border-bottom: none; }
-        .row-label {
-            width: 44px; font-size: 11px; font-weight: 700;
-            color: var(--dim); flex-shrink: 0;
-        }
-        .row-desc { flex: 1; color: #707050; font-size: 11px; }
-        .row-val {
-            font-family: monospace; font-size: 14px;
+        .metric-label { font-size: 10px; color: var(--dim); margin-bottom: 2px; }
+        .metric-val {
+            font-size: 14px; font-family: monospace;
             font-weight: 700; color: var(--dim);
-            min-width: 80px; text-align: right; flex-shrink: 0;
         }
-        .row-val.ok   { color: var(--ok); }
-        .row-val.warn { color: var(--warn); }
-        .row-val.err  { color: var(--err); }
+        .metric-val.ok   { color: var(--ok); }
+        .metric-val.warn { color: var(--warn); }
+        .metric-val.err  { color: var(--err); }
+        .metric-val.neu  { color: var(--acc); }
 
-        /* File info */
-        .file-info {
-            background: var(--bar); border: 1px solid var(--sep);
-            border-radius: 10px; padding: 10px 12px;
-            font-size: 12px; color: var(--dim);
-            margin-bottom: 20px; font-family: monospace;
-            line-height: 1.8;
+        /* video player */
+        .vid-wrap {
+            display: none; margin-bottom: 10px;
+            background: #000; border-radius: 8px; overflow: hidden;
         }
-        .file-info span { color: var(--txt); }
-
-        /* Progress log */
-        #log {
-            font-family: monospace; font-size: 11px;
-            color: var(--dim); line-height: 1.7;
-            background: #060606; border: 1px solid var(--sep);
-            border-radius: 8px; padding: 10px 12px;
-            min-height: 60px; white-space: pre-wrap;
+        .vid-wrap.show { display: block; }
+        .vid-wrap video {
+            width: 100%; max-height: 240px;
+            object-fit: contain; display: block;
+        }
+        .vid-label {
+            font-size: 10px; color: var(--dim);
+            padding: 4px 8px;
+            background: #0a0a0a;
         }
 
-        /* Copy button */
-        #copyBtn {
-            background: #1a1a0a; border: 1px solid #3a3a18;
-            color: var(--dim); padding: 8px 16px;
-            border-radius: 8px; font-size: 12px;
-            cursor: pointer; margin-bottom: 16px;
+        /* render-time note */
+        .render-note {
+            font-size: 10px; color: #404030;
+            margin-bottom: 8px;
         }
-        #copyBtn:active { background: #252d00; }
 
-        .section-title {
+        /* log */
+        .log-toggle {
             font-size: 11px; color: var(--dim);
-            margin: 14px 0 6px; letter-spacing: 1px;
-            text-transform: uppercase;
+            cursor: pointer; margin-bottom: 4px;
+        }
+        .log {
+            display: none;
+            font-family: monospace; font-size: 10px;
+            color: var(--dim); line-height: 1.6;
+            background: #060606; border: 1px solid var(--sep);
+            border-radius: 6px; padding: 8px 10px;
+            white-space: pre-wrap; max-height: 160px;
+            overflow-y: auto;
+        }
+        .log.open { display: block; }
+
+        /* copy button */
+        .copy-btn {
+            background: #111; border: 1px solid var(--sep);
+            color: var(--dim); padding: 6px 14px;
+            border-radius: 7px; font-size: 11px;
+            cursor: pointer; margin-top: 8px;
+        }
+        .copy-btn:active { background: #1a1a0a; }
+
+        input[type="file"] { display: none; }
+
+        /* section header */
+        .sec-hdr {
+            font-size: 10px; color: var(--dim);
+            letter-spacing: 1px; text-transform: uppercase;
+            margin: 14px 0 6px;
         }
 
         .idle { color: var(--dim); font-style: italic; }
@@ -108,106 +196,225 @@
 </head>
 <body>
 
-<h1>📊 動画読み込み診断</h1>
-<p class="sub">v1.0 — タイミング計測ツール（Service Worker なし）</p>
+<h1>動画取得方式 比較診断</h1>
+<p class="sub">accept属性ごとの動画取得動作を計測・比較するツール（Service Worker なし）</p>
 
-<div class="note">
-    <b>計測タイミングの説明：</b><br>
-    「A」= ファイルピッカーを開いてからJS側にファイルが渡されるまで。ここにはiPadOSのファイルダウンロード・HEVC変換時間が含まれ、JSからは計測不可。<br>
-    「B」= JS受け取り → loadedmetadata（動画情報取得）<br>
-    「C」= JS受け取り → loadeddata（最初のフレーム表示可能）<br>
-    「D」= JS受け取り → canplay（再生可能）<br>
-    「E」= MP4コンテナ解析（moovボックス探索）時間
+<!-- ════════════════════
+     調査結果レポート
+════════════════════ -->
+<div class="research-box">
+    <b>【調査結果】WebKit / iOS Safari の動画トランスコード動作</b><br><br>
+    WebKit は <code>WKFileUploadMediaTranscoder</code> により、<b>写真 App 経由で選択したすべての動画を H.264 にトランスコードします</b>（<code>AVAssetExportSession</code> で最高品質プリセット）。<br>
+    これは 2024 年の画像トランスコード修正（WebKit bug #267277）では対象外とされており、動画は「互換性のため」引き続きトランスコードが継続されています。<br><br>
+    <b>accept 属性は動画トランスコードに影響しません。</b>どの値を指定しても Photos Picker 経由の動画は必ず H.264 に変換されます。<br>
+    ファイル App 経由（UIDocumentPickerViewController）ではファイルを直接受け取るためトランスコードは発生しません。<br><br>
+    <b>PHPickerViewController + preferredAssetRepresentationMode = .current</b> でも、物理デバイスでは HEVC→H.264 トランスコードが発生する事例が Apple Developer Forums で報告されています（未解決）。
+    <div class="verdict">⚠ 結論：PWA で写真 App からの動画トランスコードを回避する手段は現時点で存在しません。</div>
 </div>
 
-<div class="pick-area">
-    <button class="pick-btn" onclick="pickFile()">📂 動画を選択して計測</button>
+<!-- ════════════════════
+     比較テーブル
+════════════════════ -->
+<div class="sec-hdr">比較テーブル（各スロット選択後に更新）</div>
+<div class="cmp-wrap">
+<table class="cmp-table" id="cmpTable">
+    <thead>
+        <tr>
+            <th>スロット</th>
+            <th>accept値</th>
+            <th>サイズ</th>
+            <th>コーデック</th>
+            <th>FPS</th>
+            <th>フレーム</th>
+            <th>B meta</th>
+            <th>C data</th>
+            <th>C2 表示</th>
+            <th>D play</th>
+            <th>E parse</th>
+        </tr>
+    </thead>
+    <tbody id="cmpBody">
+        <tr id="cmp-1"><td>1</td><td class="c-dim">video/*</td><td class="c-dim">—</td><td class="c-dim">—</td><td class="c-dim">—</td><td class="c-dim">—</td><td class="c-dim">—</td><td class="c-dim">—</td><td class="c-dim">—</td><td class="c-dim">—</td><td class="c-dim">—</td></tr>
+        <tr id="cmp-2"><td>2</td><td class="c-dim">video/mp4</td><td class="c-dim">—</td><td class="c-dim">—</td><td class="c-dim">—</td><td class="c-dim">—</td><td class="c-dim">—</td><td class="c-dim">—</td><td class="c-dim">—</td><td class="c-dim">—</td><td class="c-dim">—</td></tr>
+        <tr id="cmp-3"><td>3</td><td class="c-dim">quicktime</td><td class="c-dim">—</td><td class="c-dim">—</td><td class="c-dim">—</td><td class="c-dim">—</td><td class="c-dim">—</td><td class="c-dim">—</td><td class="c-dim">—</td><td class="c-dim">—</td><td class="c-dim">—</td></tr>
+        <tr id="cmp-4"><td>4</td><td class="c-dim">なし</td><td class="c-dim">—</td><td class="c-dim">—</td><td class="c-dim">—</td><td class="c-dim">—</td><td class="c-dim">—</td><td class="c-dim">—</td><td class="c-dim">—</td><td class="c-dim">—</td><td class="c-dim">—</td></tr>
+    </tbody>
+</table>
 </div>
 
-<div class="section-title">ファイル情報</div>
-<div class="file-info" id="fileInfo">
-    <span class="idle">— ファイル未選択 —</span>
-</div>
-
-<div class="section-title">計測結果</div>
-<div class="results">
-    <div class="row">
-        <span class="row-label">B</span>
-        <span class="row-desc">loadedmetadata（コンテナ情報）</span>
-        <span class="row-val idle" id="rB">—</span>
+<!-- ════════════════════
+     スロット 1  accept="video/*"
+════════════════════ -->
+<div class="slot" id="slot-1">
+    <div class="slot-hdr" onclick="toggleSlot(1)">
+        <div class="slot-num">1</div>
+        <div class="slot-title">標準：<code>accept="video/*"</code></div>
+        <div class="slot-status" id="stat-1">未計測</div>
+        <div class="slot-toggle" id="tog-1">▾</div>
     </div>
-    <div class="row">
-        <span class="row-label">C</span>
-        <span class="row-desc">loadeddata（初回フレーム表示）</span>
-        <span class="row-val idle" id="rC">—</span>
-    </div>
-    <div class="row">
-        <span class="row-label">D</span>
-        <span class="row-desc">canplay（再生準備完了）</span>
-        <span class="row-val idle" id="rD">—</span>
-    </div>
-    <div class="row">
-        <span class="row-label">E</span>
-        <span class="row-desc">MP4解析（moovボックス）</span>
-        <span class="row-val idle" id="rE">—</span>
-    </div>
-    <div class="row">
-        <span class="row-label">FPS</span>
-        <span class="row-desc">コンテナ解析結果</span>
-        <span class="row-val idle" id="rFPS">—</span>
-    </div>
-    <div class="row">
-        <span class="row-label">フレーム</span>
-        <span class="row-desc">PTS総数（moovより）</span>
-        <span class="row-val idle" id="rFrames">—</span>
+    <div class="slot-body open" id="body-1">
+        <div class="accept-badge">accept="video/*"</div>
+        <div class="slot-desc">現在の実装。写真 App・ファイル App どちらでも選択可能。</div>
+        <button class="pick-btn" onclick="pickFor(1)">📂 動画を選択（スロット1）</button>
+        <input type="file" accept="video/*" id="fi-1" onchange="onFilePicked(1,this)">
+        <div class="file-row" id="fr-1"><span class="idle">— ファイル未選択 —</span></div>
+        <div class="metrics" id="met-1"></div>
+        <div class="render-note" id="rn-1"></div>
+        <div class="vid-wrap" id="vw-1">
+            <div class="vid-label" id="vl-1">▶ 動画プレイヤー（loadeddata 後に表示）</div>
+            <video id="vid-1" playsinline controls></video>
+        </div>
+        <div class="log-toggle" onclick="toggleLog(1)" id="lt-1">▶ ログ表示</div>
+        <div class="log" id="log-1"></div>
+        <button class="copy-btn" onclick="copyResult(1)">📋 スロット1の結果をコピー</button>
     </div>
 </div>
 
-<button id="copyBtn" onclick="copyResult()">📋 結果をコピー</button>
+<!-- ════════════════════
+     スロット 2  accept="video/mp4"
+════════════════════ -->
+<div class="slot" id="slot-2">
+    <div class="slot-hdr" onclick="toggleSlot(2)">
+        <div class="slot-num">2</div>
+        <div class="slot-title">MP4 明示：<code>accept="video/mp4"</code></div>
+        <div class="slot-status" id="stat-2">未計測</div>
+        <div class="slot-toggle" id="tog-2">▾</div>
+    </div>
+    <div class="slot-body" id="body-2">
+        <div class="accept-badge">accept="video/mp4"</div>
+        <div class="slot-desc">MP4 形式を明示指定。トランスコードに影響するか検証。</div>
+        <button class="pick-btn" onclick="pickFor(2)">📂 動画を選択（スロット2）</button>
+        <input type="file" accept="video/mp4" id="fi-2" onchange="onFilePicked(2,this)">
+        <div class="file-row" id="fr-2"><span class="idle">— ファイル未選択 —</span></div>
+        <div class="metrics" id="met-2"></div>
+        <div class="render-note" id="rn-2"></div>
+        <div class="vid-wrap" id="vw-2">
+            <div class="vid-label" id="vl-2">▶ 動画プレイヤー（loadeddata 後に表示）</div>
+            <video id="vid-2" playsinline controls></video>
+        </div>
+        <div class="log-toggle" onclick="toggleLog(2)" id="lt-2">▶ ログ表示</div>
+        <div class="log" id="log-2"></div>
+        <button class="copy-btn" onclick="copyResult(2)">📋 スロット2の結果をコピー</button>
+    </div>
+</div>
 
-<div class="section-title">ログ</div>
-<div id="log">— ファイルを選択するとここに詳細が表示されます —</div>
+<!-- ════════════════════
+     スロット 3  accept="video/quicktime"
+════════════════════ -->
+<div class="slot" id="slot-3">
+    <div class="slot-hdr" onclick="toggleSlot(3)">
+        <div class="slot-num">3</div>
+        <div class="slot-title">QuickTime：<code>accept="video/quicktime"</code></div>
+        <div class="slot-status" id="stat-3">未計測</div>
+        <div class="slot-toggle" id="tog-3">▾</div>
+    </div>
+    <div class="slot-body" id="body-3">
+        <div class="accept-badge">accept="video/quicktime"</div>
+        <div class="slot-desc">QuickTime/MOV 形式を指定。写真 App の出力形式（.mov）に合わせた指定。</div>
+        <button class="pick-btn" onclick="pickFor(3)">📂 動画を選択（スロット3）</button>
+        <input type="file" accept="video/quicktime" id="fi-3" onchange="onFilePicked(3,this)">
+        <div class="file-row" id="fr-3"><span class="idle">— ファイル未選択 —</span></div>
+        <div class="metrics" id="met-3"></div>
+        <div class="render-note" id="rn-3"></div>
+        <div class="vid-wrap" id="vw-3">
+            <div class="vid-label" id="vl-3">▶ 動画プレイヤー（loadeddata 後に表示）</div>
+            <video id="vid-3" playsinline controls></video>
+        </div>
+        <div class="log-toggle" onclick="toggleLog(3)" id="lt-3">▶ ログ表示</div>
+        <div class="log" id="log-3"></div>
+        <button class="copy-btn" onclick="copyResult(3)">📋 スロット3の結果をコピー</button>
+    </div>
+</div>
 
-<!-- Hidden video element for event measurement -->
-<video id="vid" playsinline preload="auto"></video>
-<input type="file" id="fi" accept="video/*" onchange="onFilePicked(this)">
+<!-- ════════════════════
+     スロット 4  accept属性なし
+════════════════════ -->
+<div class="slot" id="slot-4">
+    <div class="slot-hdr" onclick="toggleSlot(4)">
+        <div class="slot-num">4</div>
+        <div class="slot-title">属性なし：<code>&lt;input type="file"&gt;</code></div>
+        <div class="slot-status" id="stat-4">未計測</div>
+        <div class="slot-toggle" id="tog-4">▾</div>
+    </div>
+    <div class="slot-body" id="body-4">
+        <div class="accept-badge">accept 属性なし</div>
+        <div class="slot-desc">accept 属性を省略。UIDocumentPickerViewController が起動する場合があります。</div>
+        <button class="pick-btn" onclick="pickFor(4)">📂 動画を選択（スロット4）</button>
+        <input type="file" id="fi-4" onchange="onFilePicked(4,this)">
+        <div class="file-row" id="fr-4"><span class="idle">— ファイル未選択 —</span></div>
+        <div class="metrics" id="met-4"></div>
+        <div class="render-note" id="rn-4"></div>
+        <div class="vid-wrap" id="vw-4">
+            <div class="vid-label" id="vl-4">▶ 動画プレイヤー（loadeddata 後に表示）</div>
+            <video id="vid-4" playsinline controls></video>
+        </div>
+        <div class="log-toggle" onclick="toggleLog(4)" id="lt-4">▶ ログ表示</div>
+        <div class="log" id="log-4"></div>
+        <button class="copy-btn" onclick="copyResult(4)">📋 スロット4の結果をコピー</button>
+    </div>
+</div>
+
+<!-- ════════════════════
+     計測タイミング凡例
+════════════════════ -->
+<div class="sec-hdr">計測タイミングの説明</div>
+<div class="research-box" style="margin-bottom:0">
+    <b>B loadedmetadata</b> ― JS 受け取り → コンテナ情報（解像度・長さ）取得<br>
+    <b>C loadeddata</b> ― JS 受け取り → 最初のフレームがデコード済み（内部バッファ）<br>
+    <b>C2 表示確認</b> ― requestVideoFrameCallback: 最初のフレームが実際に画面に描画された瞬間<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;C と C2 の差は通常 1〜2 フレーム分（約 16〜33ms）。C2 が大幅に遅い場合はレンダリングパイプラインの問題。<br>
+    <b>D canplay</b> ― JS 受け取り → 再生可能と判断<br>
+    <b>E MP4 解析</b> ― moov ボックス探索・PTS 配列構築の所要時間<br>
+    <b>「A」時間</b>（JSで計測不可）― ピッカーを開いてからファイルが JS に渡されるまで。
+    写真 App 経由では HEVC→H.264 トランスコード（約 20 秒）がここに含まれます。
+</div>
 
 <script>
-// ════════════════════════════════════
-// STATE
-// ════════════════════════════════════
-let t0 = 0;
-let resultData = {};
-let currentFile = null;
+// ════════════════════════════════════════
+// SLOT CONFIG
+// ════════════════════════════════════════
+const SLOTS = [
+    { id: 1, accept: 'video/*',         label: 'video/*（標準）' },
+    { id: 2, accept: 'video/mp4',       label: 'video/mp4' },
+    { id: 3, accept: 'video/quicktime', label: 'video/quicktime' },
+    { id: 4, accept: null,              label: 'accept なし' },
+];
 
-function pickFile() {
-    document.getElementById('fi').click();
+// Measurement storage per slot
+const M = {};
+SLOTS.forEach(s => {
+    M[s.id] = {
+        fileName: '', fileSize: 0, fileMime: '',
+        resolution: '', duration: 0,
+        codec: '—', fps: null, isVFR: false, frames: 0, parseMs: 0,
+        metaMs: 0, dataMs: 0, renderMs: 0, canPlayMs: 0,
+        done: false, t0: 0
+    };
+});
+
+// ════════════════════════════════════════
+// UI HELPERS
+// ════════════════════════════════════════
+function toggleSlot(id) {
+    const body = document.getElementById('body-' + id);
+    const tog  = document.getElementById('tog-' + id);
+    const open = body.classList.toggle('open');
+    tog.textContent = open ? '▾' : '▸';
+}
+function toggleLog(id) {
+    const el = document.getElementById('log-' + id);
+    const lt = document.getElementById('lt-' + id);
+    const open = el.classList.toggle('open');
+    lt.textContent = (open ? '▼' : '▶') + ' ログ表示';
 }
 
-function log(msg) {
-    const el = document.getElementById('log');
-    const ts = performance.now().toFixed(1);
-    el.textContent += `[+${ts.padStart(8)}ms]  ${msg}\n`;
+function pickFor(id) { document.getElementById('fi-' + id).click(); }
+
+function logTo(id, msg) {
+    const el = document.getElementById('log-' + id);
+    const ms = M[id].t0 > 0 ? (performance.now() - M[id].t0).toFixed(1) : '—';
+    el.textContent += `[${('+'+ms+'ms').padStart(10)}]  ${msg}\n`;
     el.scrollTop = el.scrollHeight;
-}
-
-function setResult(id, val, cls) {
-    const el = document.getElementById(id);
-    el.textContent = val;
-    el.className = 'row-val ' + (cls || '');
-}
-
-function fmtMs(ms) {
-    if (ms <= 0) return '—';
-    if (ms < 1000) return ms.toFixed(0) + ' ms';
-    return (ms / 1000).toFixed(2) + ' s';
-}
-
-function colorMs(ms, greenLimit, yellowLimit) {
-    if (ms <= 0) return '';
-    if (ms <= greenLimit) return 'ok';
-    if (ms <= yellowLimit) return 'warn';
-    return 'err';
 }
 
 function fmtBytes(b) {
@@ -216,93 +423,200 @@ function fmtBytes(b) {
     if (b > 1e6) return (b / 1e6).toFixed(1) + ' MB';
     return (b / 1024).toFixed(0) + ' KB';
 }
+function fmtMs(ms) {
+    if (!ms || ms <= 0) return '—';
+    if (ms < 1000) return ms.toFixed(0) + 'ms';
+    return (ms / 1000).toFixed(2) + 's';
+}
+function clsMs(ms, g, y) {
+    if (!ms || ms <= 0) return 'c-dim';
+    if (ms <= g) return 'c-ok';
+    if (ms <= y) return 'c-warn';
+    return 'c-err';
+}
 
-// ════════════════════════════════════
+// ════════════════════════════════════════
+// RENDER metrics UI
+// ════════════════════════════════════════
+function renderMetrics(id) {
+    const m = M[id];
+
+    // File row
+    document.getElementById('fr-' + id).innerHTML = [
+        `<div class="ftag"><span>サイズ: </span><b>${fmtBytes(m.fileSize)}</b></div>`,
+        `<div class="ftag"><span>MIME: </span><b>${m.fileMime || '—'}</b></div>`,
+        `<div class="ftag"><span>解像度: </span><b>${m.resolution || '—'}</b></div>`,
+        `<div class="ftag"><span>長さ: </span><b>${m.duration > 0 ? m.duration.toFixed(2) + 's' : '—'}</b></div>`,
+    ].join('');
+
+    // Metrics grid
+    const def = (label, val, cls) =>
+        `<div class="metric"><div class="metric-label">${label}</div><div class="metric-val ${cls}">${val}</div></div>`;
+
+    const codecCls = (c) => {
+        if (!c || c === '—') return 'c-dim';
+        if (c.startsWith('avc')) return 'c-warn'; // H.264 → 変換あり
+        if (c.startsWith('hvc') || c.startsWith('hev')) return 'c-ok'; // HEVC → 元ファイル
+        return 'neu';
+    };
+
+    document.getElementById('met-' + id).innerHTML = [
+        def('コーデック', m.codec || '—', codecCls(m.codec) + ' metric-val'),
+        def('FPS', m.fps ? (m.fps + (m.isVFR ? ' (VFR)' : '')) : (m.isVFR ? 'VFR' : '—'), m.fps ? 'neu' : 'c-dim'),
+        def('フレーム数', m.frames > 0 ? m.frames.toLocaleString() : '—', m.frames > 0 ? 'neu' : 'c-dim'),
+        def('B loadedmetadata', fmtMs(m.metaMs),   clsMs(m.metaMs, 500, 1500)),
+        def('C loadeddata',     fmtMs(m.dataMs),   clsMs(m.dataMs, 800, 2000)),
+        def('C2 表示確認 (rVFC)', m.renderMs > 0 ? fmtMs(m.renderMs) : '—', clsMs(m.renderMs, 900, 2200)),
+        def('D canplay',        fmtMs(m.canPlayMs), clsMs(m.canPlayMs, 800, 2000)),
+        def('E MP4 解析',       fmtMs(m.parseMs),  clsMs(m.parseMs, 200, 500)),
+    ].join('');
+
+    // Render note: codec interpretation
+    const rn = document.getElementById('rn-' + id);
+    if (m.codec && m.codec !== '—') {
+        if (m.codec.startsWith('avc')) {
+            rn.innerHTML = '⚠ コーデック <b style="color:var(--warn)">' + m.codec + '</b> = H.264。写真 App からトランスコードされた可能性があります。';
+        } else if (m.codec.startsWith('hvc') || m.codec.startsWith('hev')) {
+            rn.innerHTML = '✅ コーデック <b style="color:var(--ok)">' + m.codec + '</b> = HEVC。元ファイルがそのまま渡されています。';
+        } else {
+            rn.innerHTML = 'コーデック: ' + m.codec;
+        }
+    }
+
+    // Status in header
+    document.getElementById('stat-' + id).textContent = m.done
+        ? `✅ ${fmtMs(m.dataMs)} (C)`
+        : '計測中…';
+
+    updateCmpTable();
+}
+
+function updateCmpTable() {
+    SLOTS.forEach(s => {
+        const m = M[s.id];
+        const row = document.getElementById('cmp-' + s.id);
+        if (!row || !m.fileSize) return;
+        const tds = row.querySelectorAll('td');
+        tds[2].textContent = fmtBytes(m.fileSize);
+        tds[2].className = '';
+        tds[3].textContent = m.codec || '—';
+        tds[3].className = m.codec && m.codec.startsWith('avc') ? 'c-warn' :
+                           (m.codec && (m.codec.startsWith('hvc') || m.codec.startsWith('hev')) ? 'c-ok' : '');
+        tds[4].textContent = m.fps ? m.fps + (m.isVFR ? '(VFR)' : '') : (m.isVFR ? 'VFR' : '—');
+        tds[5].textContent = m.frames > 0 ? m.frames.toLocaleString() : '—';
+        tds[6].className = clsMs(m.metaMs, 500, 1500);
+        tds[6].textContent = fmtMs(m.metaMs);
+        tds[7].className = clsMs(m.dataMs, 800, 2000);
+        tds[7].textContent = fmtMs(m.dataMs);
+        tds[8].className = clsMs(m.renderMs, 900, 2200);
+        tds[8].textContent = fmtMs(m.renderMs);
+        tds[9].className = clsMs(m.canPlayMs, 800, 2000);
+        tds[9].textContent = fmtMs(m.canPlayMs);
+        tds[10].className = clsMs(m.parseMs, 200, 500);
+        tds[10].textContent = fmtMs(m.parseMs);
+    });
+}
+
+// ════════════════════════════════════════
 // FILE PICKED
-// ════════════════════════════════════
-function onFilePicked(input) {
+// ════════════════════════════════════════
+function onFilePicked(id, input) {
     const file = input.files[0];
     if (!file) return;
-    currentFile = file;
 
-    // Reset UI
-    document.getElementById('log').textContent = '';
-    ['rB','rC','rD','rE','rFPS','rFrames'].forEach(id => {
-        setResult(id, '計測中…', '');
+    const m = M[id];
+    // Reset
+    Object.assign(m, {
+        fileName: file.name, fileSize: file.size, fileMime: file.type,
+        resolution: '', duration: 0,
+        codec: '—', fps: null, isVFR: false, frames: 0, parseMs: 0,
+        metaMs: 0, dataMs: 0, renderMs: 0, canPlayMs: 0,
+        done: false
     });
-    resultData = {};
 
-    // File info
-    const fi = document.getElementById('fileInfo');
-    fi.innerHTML = `
-名前: <span>${file.name}</span>
-サイズ: <span>${fmtBytes(file.size)}</span>
-MIME: <span>${file.type || '不明'}</span>
-最終更新: <span>${new Date(file.lastModified).toLocaleString('ja-JP')}</span>
-    `.trim();
+    document.getElementById('log-' + id).textContent = '';
+    document.getElementById('met-' + id).innerHTML = '';
+    document.getElementById('rn-' + id).textContent = '';
+    document.getElementById('vw-' + id).classList.remove('show');
 
-    log(`ファイル受け取り: ${file.name} (${fmtBytes(file.size)})`);
-    t0 = performance.now();
-    log(`JS計測開始 (t0 = 0ms 基準)`);
+    m.t0 = performance.now();
+    logTo(id, `ファイル受け取り: ${file.name}`);
+    logTo(id, `サイズ: ${fmtBytes(file.size)}, MIME: ${file.type || '不明'}`);
+    logTo(id, `JS 計測開始 (t0 = 0ms 基準)`);
 
-    const vid = document.getElementById('vid');
+    document.getElementById('stat-' + id).textContent = '計測中…';
+
+    // Update file row immediately
+    document.getElementById('fr-' + id).innerHTML =
+        `<div class="ftag"><span>サイズ: </span><b>${fmtBytes(file.size)}</b></div>` +
+        `<div class="ftag"><span>MIME: </span><b>${file.type || '不明'}</b></div>` +
+        `<div class="ftag"><span>読み込み中…</span></div>`;
+
+    const vid = document.getElementById('vid-' + id);
 
     // Revoke previous blob
     if (vid._blobUrl) { URL.revokeObjectURL(vid._blobUrl); vid._blobUrl = null; }
 
+    // Register requestVideoFrameCallback BEFORE setting src
+    if ('requestVideoFrameCallback' in HTMLVideoElement.prototype) {
+        vid.requestVideoFrameCallback((now, meta) => {
+            m.renderMs = performance.now() - m.t0;
+            logTo(id, `C2 requestVideoFrameCallback (実際の画面表示): ${fmtMs(m.renderMs)}`);
+            logTo(id, `  → mediaTime=${meta.mediaTime?.toFixed(4)}s, presentedFrames=${meta.presentedFrames}`);
+            renderMetrics(id);
+        });
+    }
+
     const url = URL.createObjectURL(file);
     vid._blobUrl = url;
 
-    // Attach events BEFORE setting src
-    vid.addEventListener('loadedmetadata', onMetadata, { once: true });
-    vid.addEventListener('loadeddata',     onFirstFrame, { once: true });
-    vid.addEventListener('canplay',        onCanPlay, { once: true });
-    vid.addEventListener('error',          onError, { once: true });
+    vid.addEventListener('loadedmetadata', function hdl() {
+        vid.removeEventListener('loadedmetadata', hdl);
+        m.metaMs = performance.now() - m.t0;
+        m.resolution = vid.videoWidth + '×' + vid.videoHeight;
+        m.duration   = vid.duration || 0;
+        logTo(id, `B loadedmetadata: ${fmtMs(m.metaMs)}`);
+        logTo(id, `  → 解像度: ${m.resolution}, 長さ: ${m.duration.toFixed(3)}s`);
+        renderMetrics(id);
+    });
+
+    vid.addEventListener('loadeddata', function hdl() {
+        vid.removeEventListener('loadeddata', hdl);
+        m.dataMs = performance.now() - m.t0;
+        m.done = true;
+        logTo(id, `C loadeddata: ${fmtMs(m.dataMs)}`);
+        // Show video player
+        document.getElementById('vw-' + id).classList.add('show');
+        document.getElementById('vl-' + id).textContent =
+            `▶ 動画プレイヤー（C: ${fmtMs(m.dataMs)} で最初のフレームデコード完了）`;
+        renderMetrics(id);
+    });
+
+    vid.addEventListener('canplay', function hdl() {
+        vid.removeEventListener('canplay', hdl);
+        m.canPlayMs = performance.now() - m.t0;
+        logTo(id, `D canplay: ${fmtMs(m.canPlayMs)}`);
+        renderMetrics(id);
+    });
+
+    vid.addEventListener('error', function hdl() {
+        vid.removeEventListener('error', hdl);
+        logTo(id, `ERROR: ${vid.error?.message || '不明なエラー'}`);
+        document.getElementById('stat-' + id).textContent = '⚠ エラー';
+    });
 
     vid.src = url;
-    log(`video.src 設定完了`);
+    logTo(id, `video.src 設定完了`);
 
     // Start MP4 analysis concurrently
-    analyzeFile(file);
+    analyzeFile(id, file);
 
     input.value = '';
 }
 
-function onMetadata() {
-    const ms = performance.now() - t0;
-    resultData.metadataMs = ms;
-    log(`loadedmetadata: ${fmtMs(ms)}`);
-    setResult('rB', fmtMs(ms), colorMs(ms, 300, 800));
-
-    const vid = document.getElementById('vid');
-    log(`  → 解像度: ${vid.videoWidth}×${vid.videoHeight}, 長さ: ${vid.duration?.toFixed(3)}s`);
-}
-
-function onFirstFrame() {
-    const ms = performance.now() - t0;
-    resultData.firstFrameMs = ms;
-    log(`loadeddata: ${fmtMs(ms)}`);
-    setResult('rC', fmtMs(ms), colorMs(ms, 500, 1500));
-}
-
-function onCanPlay() {
-    const ms = performance.now() - t0;
-    resultData.canPlayMs = ms;
-    log(`canplay: ${fmtMs(ms)}`);
-    setResult('rD', fmtMs(ms), colorMs(ms, 500, 2000));
-}
-
-function onError() {
-    const vid = document.getElementById('vid');
-    log(`ERROR: ${vid.error?.message || '不明なエラー'}`);
-    setResult('rB', 'エラー', 'err');
-    setResult('rC', 'エラー', 'err');
-    setResult('rD', 'エラー', 'err');
-}
-
-// ════════════════════════════════════
-// MP4 CONTAINER PARSER (inline)
-// ════════════════════════════════════
+// ════════════════════════════════════════
+// MP4 CONTAINER PARSER
+// ════════════════════════════════════════
 function readSlice(file, start, end) {
     return new Promise((resolve, reject) => {
         const r = new FileReader();
@@ -330,14 +644,11 @@ function _findBoxes(dv, start, end, type) {
     }
     return results;
 }
-function _findBox(dv, start, end, type) {
-    const r = _findBoxes(dv, start, end, type);
-    return r.length ? r[0] : null;
-}
+function _findBox(dv, s, e, t) { const r = _findBoxes(dv,s,e,t); return r.length?r[0]:null; }
 
 const KNOWN_FPS = [24, 25, 29.97, 30, 50, 59.94, 60, 120, 240];
 function snapFPS(fps) {
-    return KNOWN_FPS.reduce((a, b) => Math.abs(b - fps) < Math.abs(a - fps) ? b : a);
+    return KNOWN_FPS.reduce((a,b) => Math.abs(b-fps)<Math.abs(a-fps)?b:a);
 }
 
 function _parseTrak(dv, start, end) {
@@ -355,7 +666,14 @@ function _parseTrak(dv, start, end) {
         const stblR = _findBox(dv, minfR[0], minfR[1], 'stbl');
         if (stblR) {
             const stsdR = _findBox(dv, stblR[0], stblR[1], 'stsd');
-            if (stsdR && stsdR[1]-stsdR[0] >= 12) codec = _fcc(dv, stsdR[0]+8);
+            // stsd data layout:
+            //   [0-3]  version(1)+flags(3)
+            //   [4-7]  entry_count(4)
+            //   [8-11] first_entry SIZE(4)   ← NOT codec (was bug in v1)
+            //   [12-15] first_entry FourCC(4) ← codec type (avc1, hvc1, etc.)
+            if (stsdR && stsdR[1] - stsdR[0] >= 16) {
+                codec = _fcc(dv, stsdR[0] + 12);  // Fixed: was +8 (read size), now +12 (read FourCC)
+            }
             const pts = _buildPTS(dv, stblR[0], stblR[1], timescale);
             if (!pts || pts.length === 0) return null;
             return { pts, timescale, codec };
@@ -379,11 +697,11 @@ function _buildPTS(dv, stblS, stblE, timescale) {
     const cttsR = _findBox(dv, stblS, stblE, 'ctts');
     if (cttsR) {
         const [cttsS, cttsE] = cttsR;
-        const cttsVer = dv.getUint8(cttsS), cc = dv.getUint32(cttsS+4,false);
+        const cv = dv.getUint8(cttsS), cc = dv.getUint32(cttsS+4, false);
         let cp = cttsS+8, ci = 0;
         for (let i = 0; i < cc && cp+8 <= cttsE && ci < dts.length; i++) {
             const sc = dv.getUint32(cp,false);
-            const off = cttsVer===1 ? dv.getInt32(cp+4,false) : dv.getUint32(cp+4,false);
+            const off = cv===1 ? dv.getInt32(cp+4,false) : dv.getUint32(cp+4,false);
             for (let j = 0; j < sc && ci < dts.length; j++, ci++) cts[ci] = off;
             cp += 8;
         }
@@ -397,8 +715,8 @@ function _buildPTS(dv, stblS, stblE, timescale) {
 
 function _parseMoov(dv, start, end) {
     for (const [ts,te] of _findBoxes(dv, start, end, 'trak')) {
-        const result = _parseTrak(dv, ts, te);
-        if (result) return result;
+        const r = _parseTrak(dv, ts, te);
+        if (r) return r;
     }
     return null;
 }
@@ -407,7 +725,7 @@ function _tryFindMoov(buf) {
     const dv = new DataView(buf), size = dv.byteLength;
     let pos = 0;
     while (pos+8 <= size) {
-        const sz = dv.getUint32(pos,false);
+        const sz = dv.getUint32(pos, false);
         if (sz < 8 || sz > size-pos+1024) { pos += 4; continue; }
         const t = _fcc(dv, pos+4);
         if (t === 'moov') return _parseMoov(dv, pos+8, pos+Math.min(sz,size));
@@ -416,8 +734,9 @@ function _tryFindMoov(buf) {
     return null;
 }
 
-async function analyzeFile(file) {
-    log(`MP4解析 開始...`);
+async function analyzeFile(id, file) {
+    const m = M[id];
+    logTo(id, `MP4 解析 開始...`);
     const te = performance.now();
     try {
         const headSize = Math.min(file.size, 2 * 1024 * 1024);
@@ -425,74 +744,82 @@ async function analyzeFile(file) {
         let result = _tryFindMoov(headBuf);
 
         if (!result && file.size > 2 * 1024 * 1024) {
-            log(`  → 先頭2MBにmoov未発見、末尾を探索...`);
+            logTo(id, `  → 先頭2MBにmoov未発見、末尾を探索...`);
             const tailStart = Math.max(0, file.size - 2 * 1024 * 1024);
             const tailBuf   = await readSlice(file, tailStart, file.size);
             result = _tryFindMoov(tailBuf);
         }
 
-        const parseMs = performance.now() - te;
-        resultData.parseMs = parseMs;
+        m.parseMs = performance.now() - te;
 
         if (result) {
-            const pts = result.pts;
-            let fps = null, isVFR = false;
-            if (pts.length > 4) {
+            m.codec  = result.codec;
+            m.frames = result.pts.length;
+
+            if (result.pts.length > 4) {
                 const diffs = [];
-                for (let i = 1; i < Math.min(pts.length, 60); i++) diffs.push(pts[i]-pts[i-1]);
+                for (let i = 1; i < Math.min(result.pts.length, 60); i++)
+                    diffs.push(result.pts[i] - result.pts[i-1]);
                 diffs.sort((a,b) => a-b);
-                const lo  = diffs[Math.floor(diffs.length * 0.1)];
-                const hi  = diffs[Math.floor(diffs.length * 0.9)];
+                const lo = diffs[Math.floor(diffs.length * 0.1)];
+                const hi = diffs[Math.floor(diffs.length * 0.9)];
                 const med = diffs[Math.floor(diffs.length / 2)];
-                isVFR = (hi-lo) > med * 0.15;
-                fps = isVFR ? null : snapFPS(1 / med);
+                m.isVFR = (hi - lo) > med * 0.15;
+                m.fps   = m.isVFR ? null : snapFPS(1 / med);
             }
-            log(`MP4解析 完了: ${fmtMs(parseMs)}`);
-            log(`  → codec=${result.codec}, frames=${pts.length}, fps=${fps||'VFR'}`);
-            setResult('rE',      fmtMs(parseMs), colorMs(parseMs, 200, 500));
-            setResult('rFPS',    fps ? fps + ' fps' : 'VFR', fps ? 'ok' : 'warn');
-            setResult('rFrames', pts.length.toString(), 'ok');
+
+            logTo(id, `E MP4 解析 完了: ${fmtMs(m.parseMs)}`);
+            logTo(id, `  → codec=${m.codec}, frames=${m.frames}, fps=${m.fps || 'VFR'}`);
         } else {
-            log(`MP4解析 失敗: moovボックスが見つかりません`);
-            log(`  → 解析時間: ${fmtMs(performance.now() - te)}`);
-            setResult('rE',      fmtMs(performance.now() - te), 'warn');
-            setResult('rFPS',    'moov未発見', 'err');
-            setResult('rFrames', 'moov未発見', 'err');
+            m.codec = 'moov未発見';
+            logTo(id, `E MP4 解析 失敗: moov ボックスが見つかりません (${fmtMs(performance.now()-te)})`);
         }
     } catch(e) {
-        const parseMs = performance.now() - te;
-        log(`MP4解析 エラー: ${e}`);
-        setResult('rE',      fmtMs(parseMs), 'err');
-        setResult('rFPS',    'エラー', 'err');
-        setResult('rFrames', 'エラー', 'err');
+        m.codec = 'エラー';
+        m.parseMs = performance.now() - te;
+        logTo(id, `E MP4 解析 エラー: ${e}`);
     }
+    renderMetrics(id);
 }
 
-// ════════════════════════════════════
+// ════════════════════════════════════════
 // COPY RESULT
-// ════════════════════════════════════
-function copyResult() {
-    const file = currentFile;
-    if (!file) { alert('先にファイルを選択してください'); return; }
+// ════════════════════════════════════════
+function copyResult(id) {
+    const m  = M[id];
+    const sl = SLOTS.find(s => s.id === id);
+    if (!m.fileSize) { alert('先にファイルを選択してください'); return; }
     const lines = [
-        '=== 動画読み込み診断結果 ===',
-        `ファイル: ${file.name}`,
-        `サイズ: ${fmtBytes(file.size)}`,
-        `MIME: ${file.type || '不明'}`,
+        `=== 比較診断 スロット${id}: ${sl.label} ===`,
+        `ファイル: ${m.fileName}`,
+        `サイズ: ${fmtBytes(m.fileSize)}`,
+        `MIME: ${m.fileMime || '不明'}`,
+        `解像度: ${m.resolution}, 長さ: ${m.duration.toFixed(2)}s`,
+        `コーデック: ${m.codec}`,
+        `FPS: ${m.fps || (m.isVFR ? 'VFR' : '—')}, フレーム: ${m.frames}`,
+        ``,
+        `B loadedmetadata: ${fmtMs(m.metaMs)}`,
+        `C loadeddata:     ${fmtMs(m.dataMs)}`,
+        `C2 rVFC表示:      ${m.renderMs > 0 ? fmtMs(m.renderMs) : '未計測'}`,
+        `D canplay:        ${fmtMs(m.canPlayMs)}`,
+        `E MP4 解析:       ${fmtMs(m.parseMs)}`,
+        ``,
         `UA: ${navigator.userAgent}`,
-        '',
-        `B loadedmetadata:  ${resultData.metadataMs  ? fmtMs(resultData.metadataMs)  : '未計測'}`,
-        `C loadeddata:      ${resultData.firstFrameMs ? fmtMs(resultData.firstFrameMs) : '未計測'}`,
-        `D canplay:         ${resultData.canPlayMs    ? fmtMs(resultData.canPlayMs)    : '未計測'}`,
-        `E MP4解析:         ${resultData.parseMs      ? fmtMs(resultData.parseMs)      : '未計測'}`,
-        '',
-        '--- ログ ---',
-        document.getElementById('log').textContent
+        ``,
+        `--- ログ ---`,
+        document.getElementById('log-' + id).textContent
     ];
     navigator.clipboard?.writeText(lines.join('\n'))
-        .then(()  => { document.getElementById('copyBtn').textContent = '✅ コピー完了'; setTimeout(()=>{ document.getElementById('copyBtn').textContent='📋 結果をコピー'; }, 2000); })
-        .catch(err => alert('コピー失敗: ' + err));
+        .then(() => {
+            const btn = event.target;
+            btn.textContent = '✅ コピー完了';
+            setTimeout(() => btn.textContent = `📋 スロット${id}の結果をコピー`, 2000);
+        })
+        .catch(e => alert('コピー失敗: ' + e));
 }
+
+// Initial state: open slot 1 by default (already done in HTML)
+// Slot 1 is open, 2-4 are closed
 </script>
 </body>
 </html>
