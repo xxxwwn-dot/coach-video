@@ -1,0 +1,2148 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>コーチビデオ</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="コーチビデオ">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#000000">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxOTIgMTkyIj48cmVjdCB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgcng9IjQwIiBmaWxsPSIjMDAwMDAwIi8+PHRleHQgeD0iOTYiIHk9IjEzMCIgZm9udC1zaXplPSI5NiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+4pq+77iPPC90ZXh0Pjwvc3ZnPg==">
+    <style>
+        :root {
+            --bg:         #000000;
+            --bar:        #0d0d0a;
+            --btn:        #1a1a0a;
+            --btn-bd:     #2a2a10;
+            --btn-act:    #252d00;
+            --btn-act-bd: #485800;
+            --accent:     #c8e830;
+            --accent-dim: #607018;
+            --icon:       #a0a060;
+            --icon-dim:   #505030;
+            --txt:        #707050;
+            --sep:        #1e1e08;
+            --play:       #22c822;
+            --play-bg:    #001800;
+            --play-sh:    rgba(34,200,34,0.45);
+            --red-btn:    #2a0808;
+            --red-bd:     #4a1010;
+            --red-ic:     #f87171;
+            --sync-c:     #c8e830;
+        }
+        * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+        body {
+            background: var(--bg);
+            color: var(--txt);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            height: 100dvh;
+            display: flex; flex-direction: column;
+            overflow: hidden; user-select: none;
+        }
+
+        /* ══ TOOLBAR ══ */
+        #toolbar {
+            height: 54px; min-height: 54px;
+            background: var(--bar);
+            border-bottom: 1px solid var(--sep);
+            display: flex; align-items: center;
+            padding: 0 8px; gap: 5px;
+            flex-shrink: 0; overflow: hidden;
+        }
+        .tb-sep { width:1px; height:34px; background:var(--sep); flex-shrink:0; margin:0 1px; }
+        .tb-btn {
+            background:var(--btn); border:1px solid var(--btn-bd);
+            color:var(--icon); height:40px; min-width:40px;
+            border-radius:9px; font-size:17px; cursor:pointer;
+            display:flex; align-items:center; justify-content:center;
+            padding:0 10px; transition:all 0.13s; flex-shrink:0;
+            white-space:nowrap;
+        }
+        .tb-btn.active { background:var(--btn-act); border-color:var(--btn-act-bd); color:var(--accent); }
+        .tb-btn:active  { opacity:0.7; transform:scale(0.93); }
+
+        /* Mode group */
+        .mode-group { display:flex; background:var(--btn); border:1px solid var(--btn-bd); border-radius:10px; overflow:hidden; }
+        .mode-btn {
+            background:none; border:none; border-right:1px solid var(--btn-bd);
+            color:var(--icon-dim); height:38px; padding:0 16px;
+            font-size:13px; font-weight:700; cursor:pointer;
+            letter-spacing:1px; transition:all 0.13s; white-space:nowrap;
+        }
+        .mode-btn:last-child { border-right:none; }
+        .mode-btn.active    { background:var(--btn-act); color:var(--accent); border-color:var(--btn-act-bd); }
+        .mode-btn:active    { opacity:0.7; }
+
+        .tool-group { display:flex; gap:3px; }
+        .tool-btn   { min-width:38px; height:38px; padding:0 8px; border-radius:8px; font-size:16px; }
+
+        .color-strip { display:flex; gap:5px; align-items:center; padding:0 3px; }
+        .cdot {
+            width:20px; height:20px; border-radius:50%;
+            border:2px solid transparent; cursor:pointer; flex-shrink:0;
+            transition:transform 0.1s;
+        }
+        .cdot.active { border-color:rgba(255,255,255,0.85); transform:scale(1.25); }
+
+        .brush-wrap { display:flex; align-items:center; }
+        .brush-slider {
+            width:60px; height:3px; -webkit-appearance:none;
+            background:var(--btn-bd); border-radius:2px; cursor:pointer; outline:none;
+        }
+        .brush-slider::-webkit-slider-thumb {
+            -webkit-appearance:none; width:14px; height:14px;
+            background:var(--icon); border-radius:50%;
+        }
+
+        /* Top-right play button */
+        #playBtn {
+            width:46px; height:46px; background:var(--play);
+            border:none; border-radius:12px; color:#001800;
+            font-size:22px; cursor:pointer;
+            display:flex; align-items:center; justify-content:center;
+            flex-shrink:0; font-weight:900;
+            box-shadow:0 0 14px var(--play-sh);
+            transition:all 0.13s; margin-left:4px;
+        }
+        #playBtn:active { transform:scale(0.91); background:#15a012; }
+
+        /* ══ ZOOM POPUP ══ */
+        #zoomPopup {
+            position:fixed; top:58px; left:50%;
+            transform:translateX(-50%);
+            background:var(--bar); border:1px solid var(--btn-act-bd);
+            border-radius:12px; padding:10px 12px;
+            display:flex; flex-direction:column; gap:8px;
+            z-index:600; min-width:180px;
+            box-shadow:0 6px 24px rgba(0,0,0,0.7);
+        }
+        #zoomPopup.hidden { display:none; }
+        .zpop-label { font-size:11px; color:var(--icon-dim); text-align:center; font-family:monospace; }
+        .zpop-btn {
+            background:var(--btn); border:1px solid var(--btn-bd);
+            color:var(--icon); padding:8px 14px; border-radius:8px;
+            font-size:14px; cursor:pointer; text-align:left;
+        }
+        .zpop-btn:active { background:var(--btn-act); }
+        .zpop-slider { width:100%; accent-color:var(--accent); height:4px; }
+
+        /* ══ PANELS ══ */
+        #panels-container {
+            flex:1; display:flex; flex-direction:row;
+            overflow:hidden; min-height:0;
+            gap:2px; padding:2px; background:#020200;
+        }
+        .panel {
+            flex:1; display:flex; flex-direction:column;
+            min-width:0; overflow:hidden; border-radius:4px;
+        }
+        .vwrap {
+            flex:1; position:relative;
+            background:#000; overflow:hidden; min-height:0;
+        }
+        .zoom-wrap {
+            position:absolute; top:0; left:0;
+            width:100%; height:100%;
+            transform-origin:center center;
+            display:flex; align-items:center; justify-content:center;
+            will-change:transform;
+        }
+        .panel-video {
+            max-width:100%; max-height:100%;
+            object-fit:contain; display:block;
+        }
+        .panel-canvas {
+            position:absolute; top:0; left:0;
+            width:100%; height:100%; touch-action:none;
+        }
+
+        /* Badges */
+        .zoom-badge {
+            position:absolute; top:6px; left:6px;
+            background:rgba(0,0,0,0.65); color:var(--icon-dim);
+            font-size:10px; padding:2px 7px; border-radius:4px;
+            pointer-events:none; z-index:5; font-family:monospace;
+        }
+        .zoom-badge.zoomed { color:var(--accent); }
+        .fps-badge {
+            position:absolute; top:24px; left:6px;
+            background:rgba(0,0,0,0.65); color:var(--icon-dim);
+            font-size:10px; padding:2px 7px; border-radius:4px;
+            pointer-events:none; z-index:5; font-family:monospace;
+        }
+        .fps-badge.hidden { display:none; }
+        .fps-badge.detected { color:#80d060; }
+        .panel-id-badge {
+            position:absolute; top:6px; right:6px;
+            background:rgba(0,0,0,0.6); color:var(--accent);
+            font-size:14px; font-weight:700;
+            padding:2px 10px; border-radius:5px;
+            pointer-events:none; z-index:5;
+            border:1px solid var(--accent-dim);
+        }
+
+        /* Loading overlay */
+        @keyframes spin { to { transform:rotate(360deg); } }
+        .loading-overlay {
+            position:absolute; inset:0; z-index:12;
+            background:rgba(0,0,0,0.8);
+            display:flex; flex-direction:column;
+            align-items:center; justify-content:center; gap:10px;
+        }
+        .loading-overlay.hidden { display:none; }
+        .loading-spinner {
+            width:34px; height:34px;
+            border:3px solid rgba(200,232,48,0.15);
+            border-top-color:var(--accent);
+            border-radius:50%;
+            animation:spin 0.8s linear infinite;
+        }
+        .loading-text { font-size:12px; color:var(--accent-dim); }
+
+        /* Drop zone */
+        .drop-zone {
+            position:absolute; inset:0;
+            display:flex; flex-direction:column;
+            align-items:center; justify-content:center;
+            background:rgba(0,0,0,0.9); cursor:pointer;
+            z-index:10; gap:14px;
+        }
+        .drop-zone.hidden { display:none; }
+        .dz-icon { font-size:52px; opacity:0.4; }
+        .dz-text { font-size:15px; color:var(--txt); }
+        .dz-btn {
+            background:var(--btn-act); border:1px solid var(--accent);
+            color:var(--accent); padding:11px 30px; border-radius:10px;
+            font-size:15px; cursor:pointer; font-weight:700;
+        }
+
+        /* ══ SEEK ROW (single-panel mode & compact AB) ══ */
+        .seek-row {
+            background:var(--bar); border-top:1px solid var(--sep);
+            padding:5px 6px; display:flex; align-items:center;
+            gap:4px; flex-shrink:0;
+        }
+        /* compact: in AB mode, only seek bar + sync dot remain */
+        .seek-row.compact {
+            padding:3px 6px;
+            height:22px;
+        }
+        .seek-row.compact .sk-btn,
+        .seek-row.compact .play-sk,
+        .seek-row.compact .clear-sk,
+        .seek-row.compact .spd-sel,
+        .seek-row.compact .time-disp { display:none !important; }
+        .seek-row.compact .seek-bar::-webkit-slider-thumb {
+            width:11px; height:11px;
+        }
+
+        .sk-btn {
+            background:var(--btn); border:1px solid var(--btn-bd);
+            color:var(--icon); width:30px; height:30px;
+            border-radius:7px; font-size:12px; cursor:pointer;
+            display:flex; align-items:center; justify-content:center;
+            flex-shrink:0; transition:all 0.12s;
+            touch-action:none; user-select:none; -webkit-user-select:none;
+        }
+        .sk-btn:active { background:var(--btn-act); transform:scale(0.88); }
+        .sk-btn.play-sk {
+            background:var(--play); border-color:var(--play); color:#001800;
+            width:34px; height:34px; font-size:15px; border-radius:8px; font-weight:900;
+        }
+        .sk-btn.clear-sk {
+            background:var(--red-btn); border-color:var(--red-bd); color:var(--red-ic);
+        }
+
+        .seek-wrap { flex:1; position:relative; display:flex; align-items:center; }
+        .seek-bar {
+            width:100%; height:4px; -webkit-appearance:none;
+            background:var(--btn-bd); border-radius:2px;
+            cursor:pointer; outline:none;
+        }
+        .seek-bar::-webkit-slider-thumb {
+            -webkit-appearance:none; width:13px; height:13px;
+            background:var(--icon); border-radius:50%;
+        }
+        .sync-dot {
+            position:absolute; top:50%; transform:translate(-50%,-50%);
+            width:9px; height:9px; border-radius:50%;
+            background:var(--sync-c); pointer-events:none;
+            display:none; z-index:2; border:1px solid rgba(0,0,0,0.5);
+        }
+
+        .spd-sel {
+            background:var(--btn); border:1px solid var(--btn-bd);
+            color:var(--txt); padding:2px 3px;
+            border-radius:6px; font-size:10px;
+            cursor:pointer; outline:none; height:26px; flex-shrink:0;
+        }
+        .spd-sel option { background:var(--bar); }
+        .time-disp {
+            font-size:10px; color:var(--icon-dim);
+            min-width:80px; text-align:right;
+            font-family:monospace; white-space:nowrap;
+        }
+
+        /* ══ BOTTOM AB BAR ══ */
+        #bottom-ab {
+            display:none;
+            background:var(--bar);
+            border-top:1px solid var(--sep);
+            flex-direction:column;
+            padding:6px 8px 8px;
+            gap:5px;
+            flex-shrink:0;
+        }
+        #bottom-ab.visible { display:flex; }
+
+        .bab-row {
+            display:flex; align-items:center;
+            gap:6px;
+        }
+
+        /* Left A section */
+        .bab-left {
+            display:flex; align-items:center;
+            gap:5px; flex:1; justify-content:flex-start;
+        }
+        /* Right B section */
+        .bab-right {
+            display:flex; align-items:center;
+            gap:5px; flex:1; justify-content:flex-end;
+        }
+        /* Center oper mode */
+        .bab-center {
+            display:flex; flex-direction:column;
+            align-items:center; gap:0;
+            flex-shrink:0;
+        }
+
+        /* Step buttons in bottom-ab */
+        .bab-step {
+            background:var(--btn); border:1px solid var(--btn-bd);
+            color:var(--icon); height:40px; min-width:40px;
+            border-radius:20px; font-size:16px; cursor:pointer;
+            display:flex; align-items:center; justify-content:center;
+            padding:0 10px; transition:all 0.12s; flex-shrink:0;
+            touch-action:none; user-select:none; -webkit-user-select:none;
+            font-weight:600; gap:2px;
+        }
+        .bab-step:active { background:var(--btn-act); transform:scale(0.90); }
+        .step-num { font-size:11px; }
+
+        /* Big play in bottom-ab */
+        .bab-play {
+            width:48px; height:48px;
+            background:var(--play); border:none;
+            border-radius:14px; color:#001800;
+            font-size:22px; cursor:pointer;
+            display:flex; align-items:center; justify-content:center;
+            flex-shrink:0; font-weight:900;
+            box-shadow:0 0 12px var(--play-sh);
+            transition:all 0.13s;
+        }
+        .bab-play:active { transform:scale(0.90); background:#15a012; }
+
+        /* Oper mode group (left A / SYNC / right B) */
+        .oper-group {
+            display:flex;
+            background:var(--btn); border:1px solid var(--btn-bd);
+            border-radius:12px; overflow:hidden;
+        }
+        .oper-btn {
+            background:none; border:none;
+            border-right:1px solid var(--btn-bd);
+            color:var(--icon-dim);
+            height:44px; padding:0 18px;
+            font-size:13px; font-weight:700;
+            cursor:pointer; letter-spacing:0.5px;
+            transition:all 0.13s; white-space:nowrap;
+        }
+        .oper-btn:last-child { border-right:none; }
+        .oper-btn.active {
+            background:var(--accent);
+            color:#0a0d00;
+            border-color:var(--accent);
+        }
+        .oper-btn:active { opacity:0.75; }
+
+        /* Info row (anchor status + times) */
+        .bab-info-row {
+            justify-content:space-between;
+            min-height:28px;
+        }
+        .bab-anchor-left {
+            display:flex; align-items:center; gap:6px; flex:1;
+        }
+        .bab-anchor-right {
+            display:flex; align-items:center; gap:6px; flex:1;
+            justify-content:flex-end;
+        }
+        .bab-sync-status {
+            font-size:11px; color:var(--accent-dim);
+            text-align:center; padding:0 8px;
+            flex-shrink:0; max-width:200px;
+        }
+        .bab-time {
+            font-size:12px; color:var(--icon-dim);
+            font-family:monospace; white-space:nowrap;
+        }
+        .bab-sp-btn {
+            background:var(--btn); border:1px solid var(--btn-bd);
+            color:var(--icon-dim);
+            padding:4px 10px; border-radius:7px;
+            font-size:11px; cursor:pointer;
+            transition:all 0.13s; white-space:nowrap;
+            display:flex; align-items:center; gap:4px;
+        }
+        .bab-sp-btn.set {
+            background:rgba(200,232,48,0.08);
+            border-color:var(--accent-dim);
+            color:var(--accent);
+        }
+        .bab-sp-btn:active { opacity:0.7; }
+
+        /* Sync-to-anchor button */
+        .bab-goto-btn {
+            background:var(--btn); border:1px solid var(--btn-bd);
+            color:var(--icon-dim); padding:4px 10px; border-radius:7px;
+            font-size:11px; cursor:pointer; white-space:nowrap;
+        }
+        .bab-goto-btn:active { background:var(--btn-act); }
+
+        /* Speed select in bottom-ab */
+        .bab-spd {
+            background:var(--btn); border:1px solid var(--btn-bd);
+            color:var(--txt); padding:3px 5px;
+            border-radius:8px; font-size:11px;
+            cursor:pointer; outline:none; height:34px; flex-shrink:0;
+        }
+        .bab-spd option { background:var(--bar); }
+
+        /* ══ TOAST ══ */
+        #toast {
+            position:fixed; bottom:56px; left:50%;
+            transform:translateX(-50%) translateY(16px);
+            background:rgba(5,5,2,0.95); color:var(--accent);
+            padding:7px 18px; border-radius:20px; font-size:13px;
+            opacity:0; transition:all 0.3s; pointer-events:none;
+            z-index:1000; border:1px solid var(--accent-dim);
+            max-width:80vw; text-align:center;
+        }
+        #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+        input[type="file"] { display:none; }
+        .hidden { display:none !important; }
+        #debugPanel:not(.hidden) { display:flex !important; }
+
+        body.tool-pen    .panel-canvas,
+        body.tool-line   .panel-canvas,
+        body.tool-arrow  .panel-canvas,
+        body.tool-circle .panel-canvas,
+        body.tool-rect   .panel-canvas { cursor:crosshair; }
+        body.tool-eraser .panel-canvas { cursor:cell; }
+    </style>
+</head>
+<body class="tool-pen">
+
+<!-- ══════════════════════════════
+     TOP TOOLBAR
+══════════════════════════════ -->
+<div id="toolbar">
+
+    <button class="tb-btn" onclick="triggerLoad(activePanel)" title="動画を開く" style="font-size:19px">📂</button>
+    <div class="tb-sep"></div>
+
+    <!-- Mode -->
+    <div class="mode-group">
+        <button class="mode-btn active" id="modeA"  onclick="setMode('a')">A</button>
+        <button class="mode-btn"        id="modeAB" onclick="setMode('ab')">A|B</button>
+        <button class="mode-btn"        id="modeB"  onclick="setMode('b')">B</button>
+    </div>
+    <div class="tb-sep"></div>
+
+    <!-- Zoom -->
+    <button class="tb-btn" id="zoomBtn" onclick="toggleZoomPopup()" style="font-size:13px;padding:0 11px;">Zoom ▾</button>
+    <div class="tb-sep"></div>
+
+    <!-- Drawing tools -->
+    <div class="tool-group">
+        <button class="tb-btn tool-btn active" id="tool-pen"    onclick="setTool('pen')"    title="ペン"  >✏</button>
+        <button class="tb-btn tool-btn"        id="tool-arrow"  onclick="setTool('arrow')"  title="矢印" >→</button>
+        <button class="tb-btn tool-btn"        id="tool-line"   onclick="setTool('line')"   title="直線" >╱</button>
+        <button class="tb-btn tool-btn"        id="tool-circle" onclick="setTool('circle')" title="楕円" >○</button>
+        <button class="tb-btn tool-btn"        id="tool-rect"   onclick="setTool('rect')"   title="四角" >□</button>
+        <button class="tb-btn tool-btn"        id="tool-eraser" onclick="setTool('eraser')" title="消し" >⊘</button>
+    </div>
+    <div class="tb-sep"></div>
+
+    <!-- Colors -->
+    <div class="color-strip">
+        <button class="cdot active" style="background:#ef4444" data-c="#ef4444" onclick="setColor(this)"></button>
+        <button class="cdot"        style="background:#3b82f6" data-c="#3b82f6" onclick="setColor(this)"></button>
+        <button class="cdot"        style="background:#facc15" data-c="#facc15" onclick="setColor(this)"></button>
+        <button class="cdot"        style="background:#22c55e" data-c="#22c55e" onclick="setColor(this)"></button>
+        <button class="cdot"        style="background:#ffffff" data-c="#ffffff" onclick="setColor(this)"></button>
+        <button class="cdot"        style="background:#f97316" data-c="#f97316" onclick="setColor(this)"></button>
+    </div>
+    <div class="tb-sep"></div>
+
+    <!-- Undo / Clear -->
+    <button class="tb-btn" onclick="undoDraw()"                   title="元に戻す"  style="font-size:16px">↩</button>
+    <button class="tb-btn" onclick="clearPanelDraw(activePanel)"  title="描画クリア"
+            style="color:var(--red-ic);background:var(--red-btn);border-color:var(--red-bd);font-size:16px">🗑</button>
+    <div class="tb-sep"></div>
+
+    <!-- Brush size -->
+    <div class="brush-wrap" title="線の太さ">
+        <input type="range" class="brush-slider" id="brushSlider" min="1" max="20" value="3"
+               oninput="brushSize=+this.value">
+    </div>
+
+    <div style="flex:1"></div>
+    <span id="vLabel" style="font-size:9px;color:var(--icon-dim);opacity:0.5;flex-shrink:0;white-space:nowrap;padding-right:4px;cursor:pointer" title="長押しでデバッグ情報">v2.3</span>
+    <button id="playBtn" onclick="togglePlay()">▶</button>
+</div>
+
+<!-- Update notification banner -->
+<div id="updateBanner" class="hidden" style="
+    background:#0d1f0d; color:#7ec87e; padding:5px 12px;
+    font-size:11px; display:flex; align-items:center; gap:8px;
+    border-bottom:1px solid #1a4020; flex-shrink:0;
+">
+    <span>🔄 新しいバージョンが利用可能です</span>
+    <button onclick="applySWUpdate()" style="
+        background:#1a3a1a; border:1px solid #2a5a2a; color:#90d890;
+        padding:2px 10px; border-radius:5px; font-size:10px; cursor:pointer;
+    ">再読み込み</button>
+    <button onclick="document.getElementById('updateBanner').classList.add('hidden')" style="
+        background:none; border:none; color:#4a8a4a; cursor:pointer; margin-left:auto; font-size:14px;
+    ">×</button>
+</div>
+
+<!-- Debug panel -->
+<div id="debugPanel" class="hidden" style="
+    background:#080f08; color:#70a070; font-size:10px; font-family:monospace;
+    padding:6px 10px; border-bottom:1px solid #1a2a1a; flex-shrink:0;
+    display:flex; gap:12px; flex-wrap:wrap; align-items:flex-start;
+">
+    <div id="dbg1" style="min-width:160px">A: —</div>
+    <div id="dbg2" style="min-width:160px">B: —</div>
+    <button onclick="copyDebugInfo()" style="
+        background:#0d200d; border:1px solid #2a4a2a; color:#80c080;
+        padding:2px 8px; border-radius:4px; font-size:9px; cursor:pointer;
+        height:20px; white-space:nowrap;
+    ">📋 コピー</button>
+</div>
+
+<!-- ══════════════════════════════
+     ZOOM POPUP
+══════════════════════════════ -->
+<div id="zoomPopup" class="hidden">
+    <span class="zpop-label" id="zoomLabel">ズーム: 100%</span>
+    <input type="range" class="zpop-slider" id="zoomSlider" min="50" max="600" value="100" step="10"
+           oninput="setZoomValue(activePanel,+this.value)">
+    <button class="zpop-btn" onclick="adjustZoom(activePanel, 0.5)">🔍 拡大 (+50%)</button>
+    <button class="zpop-btn" onclick="adjustZoom(activePanel,-0.5)">🔎 縮小 (-50%)</button>
+    <button class="zpop-btn" onclick="resetZoom(activePanel)">⊡ リセット (100%)</button>
+</div>
+
+<!-- ══════════════════════════════
+     PANELS
+══════════════════════════════ -->
+<div id="panels-container">
+
+    <!-- Panel A -->
+    <div class="panel" id="panel1">
+        <div class="vwrap" id="wrapper1">
+            <div class="zoom-wrap" id="zoom1">
+                <video class="panel-video" id="video1" playsinline preload="auto"></video>
+                <canvas class="panel-canvas" id="canvas1"></canvas>
+            </div>
+            <div class="zoom-badge" id="zind1">100%</div>
+            <div class="fps-badge hidden" id="fps1">30fps</div>
+            <div class="panel-id-badge">A</div>
+            <div class="loading-overlay hidden" id="loading1">
+                <div class="loading-spinner"></div>
+                <span class="loading-text" id="loading1-txt">読み込み中...</span>
+            </div>
+            <div class="drop-zone" id="dz1" onclick="triggerLoad(1)">
+                <div class="dz-icon">🎬</div>
+                <div class="dz-text">タップして動画 A を選択</div>
+                <button class="dz-btn">ファイルを開く</button>
+            </div>
+        </div>
+        <div class="seek-row" id="seekRow1">
+            <button class="sk-btn" id="sk1p5" title="-5f">⏮</button>
+            <button class="sk-btn" id="sk1p1" title="-1f">◀</button>
+            <button class="sk-btn play-sk" id="pplay1" onclick="togglePanelPlay(1)">▶</button>
+            <div class="seek-wrap">
+                <input type="range" class="seek-bar" id="seek1" min="0" max="1000" value="0" step="1">
+                <div class="sync-dot" id="sdot1"></div>
+            </div>
+            <button class="sk-btn" id="sk1n1" title="+1f">▶</button>
+            <button class="sk-btn" id="sk1n5" title="+5f">⏭</button>
+            <select class="spd-sel" onchange="setPanelSpeed(1,this.value)">
+                <option value="0.1">0.1x</option><option value="0.25">0.25x</option>
+                <option value="0.5">0.5x</option><option value="0.75">0.75x</option>
+                <option value="1" selected>1x</option>
+                <option value="1.5">1.5x</option><option value="2">2x</option>
+            </select>
+            <span class="time-disp" id="time1">0:00.0 / 0:00.0</span>
+            <button class="sk-btn clear-sk" onclick="clearPanelDraw(1)" title="描画クリア">🗑</button>
+        </div>
+    </div>
+
+    <!-- Panel B -->
+    <div class="panel" id="panel2" style="display:none">
+        <div class="vwrap" id="wrapper2">
+            <div class="zoom-wrap" id="zoom2">
+                <video class="panel-video" id="video2" playsinline preload="auto"></video>
+                <canvas class="panel-canvas" id="canvas2"></canvas>
+            </div>
+            <div class="zoom-badge" id="zind2">100%</div>
+            <div class="fps-badge hidden" id="fps2">30fps</div>
+            <div class="panel-id-badge">B</div>
+            <div class="loading-overlay hidden" id="loading2">
+                <div class="loading-spinner"></div>
+                <span class="loading-text" id="loading2-txt">読み込み中...</span>
+            </div>
+            <div class="drop-zone" id="dz2" onclick="triggerLoad(2)">
+                <div class="dz-icon">🎬</div>
+                <div class="dz-text">タップして動画 B を選択</div>
+                <button class="dz-btn">ファイルを開く</button>
+            </div>
+        </div>
+        <div class="seek-row" id="seekRow2">
+            <button class="sk-btn" id="sk2p5" title="-5f">⏮</button>
+            <button class="sk-btn" id="sk2p1" title="-1f">◀</button>
+            <button class="sk-btn play-sk" id="pplay2" onclick="togglePanelPlay(2)">▶</button>
+            <div class="seek-wrap">
+                <input type="range" class="seek-bar" id="seek2" min="0" max="1000" value="0" step="1">
+                <div class="sync-dot" id="sdot2"></div>
+            </div>
+            <button class="sk-btn" id="sk2n1" title="+1f">▶</button>
+            <button class="sk-btn" id="sk2n5" title="+5f">⏭</button>
+            <select class="spd-sel" onchange="setPanelSpeed(2,this.value)">
+                <option value="0.1">0.1x</option><option value="0.25">0.25x</option>
+                <option value="0.5">0.5x</option><option value="0.75">0.75x</option>
+                <option value="1" selected>1x</option>
+                <option value="1.5">1.5x</option><option value="2">2x</option>
+            </select>
+            <span class="time-disp" id="time2">0:00.0 / 0:00.0</span>
+            <button class="sk-btn clear-sk" onclick="clearPanelDraw(2)" title="描画クリア">🗑</button>
+        </div>
+    </div>
+
+</div><!-- /panels-container -->
+
+<!-- ══════════════════════════════
+     BOTTOM A|B CONTROL BAR
+     (visible only in A|B mode)
+══════════════════════════════ -->
+<div id="bottom-ab">
+
+    <!-- Row 1: Step controls + oper-mode selector + play -->
+    <div class="bab-row">
+
+        <!-- Left: open + back steps -->
+        <div class="bab-left">
+            <button class="tb-btn" onclick="triggerLoad(1)"
+                    title="動画 A を開く"
+                    style="font-size:17px;height:40px;min-width:40px;border-radius:10px;">📂A</button>
+            <button class="bab-step" id="ab-p5" title="-5フレーム (長押し連続)">
+                ↺<span class="step-num">5</span>
+            </button>
+            <button class="bab-step" id="ab-p1" title="-1フレーム (長押し連続)">◀</button>
+        </div>
+
+        <!-- Center: oper mode (left A / SYNC / right B) -->
+        <div class="bab-center">
+            <div class="oper-group">
+                <button class="oper-btn" id="operA" onclick="setOperMode('a')">← A 個別</button>
+                <button class="oper-btn active" id="operSync" onclick="setOperMode('sync')">↔ SYNC ↔</button>
+                <button class="oper-btn" id="operB" onclick="setOperMode('b')">B 個別 →</button>
+            </div>
+        </div>
+
+        <!-- Right: forward steps + speed + play -->
+        <div class="bab-right">
+            <button class="bab-step" id="ab-n1" title="+1フレーム (長押し連続)">▶</button>
+            <button class="bab-step" id="ab-n5" title="+5フレーム (長押し連続)">
+                <span class="step-num">5</span>↻
+            </button>
+            <select class="bab-spd" id="ab-spd" onchange="setSpeedOper(this.value)">
+                <option value="0.1">0.1x</option><option value="0.25">0.25x</option>
+                <option value="0.5">0.5x</option><option value="0.75">0.75x</option>
+                <option value="1" selected>1x</option>
+                <option value="1.5">1.5x</option><option value="2">2x</option>
+            </select>
+            <button class="bab-play" id="ab-play" onclick="toggleOper()">▶</button>
+            <button class="tb-btn" onclick="triggerLoad(2)"
+                    title="動画 B を開く"
+                    style="font-size:17px;height:40px;min-width:40px;border-radius:10px;">📂B</button>
+        </div>
+    </div>
+
+    <!-- Row 2: Anchor point status + sync info + times -->
+    <div class="bab-row bab-info-row">
+        <div class="bab-anchor-left">
+            <button class="bab-sp-btn" id="ab-sp1" onclick="setSyncPoint(1)">📌 A 基準点: 未設定</button>
+            <span class="bab-time" id="ab-t1">0:00.0</span>
+        </div>
+        <div class="bab-sync-status" id="ab-sync-msg">AとBの基準点を設定してください</div>
+        <div class="bab-anchor-right">
+            <span class="bab-time" id="ab-t2">0:00.0</span>
+            <button class="bab-sp-btn" id="ab-sp2" onclick="setSyncPoint(2)">📌 B 基準点: 未設定</button>
+        </div>
+    </div>
+
+    <!-- Row 3: Goto anchor + reset (shown after both set) -->
+    <div class="bab-row" id="ab-anchor-actions" style="display:none;justify-content:center;gap:8px">
+        <button class="bab-goto-btn" onclick="gotoSyncAnchors()">🏠 基準点へ戻る</button>
+        <button class="bab-goto-btn" onclick="resetSyncPoints()" style="color:var(--red-ic);border-color:var(--red-bd);">↺ 基準点リセット</button>
+    </div>
+
+</div><!-- /bottom-ab -->
+
+<input type="file" id="fi1" accept="video/*" onchange="loadVideo(1,this)">
+<input type="file" id="fi2" accept="video/*" onchange="loadVideo(2,this)">
+<div id="toast"></div>
+
+<script>
+// ════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════
+const APP_VERSION = '2.3';
+
+let mode        = 'a';
+let tool        = 'pen';
+let color       = '#ef4444';
+let brushSize   = 3;
+let activePanel = 1;
+let drawing     = false;
+let seekingPanel = 0;
+let zoomPopupOpen = false;
+let debugVisible  = false;
+
+// operMode: which panel(s) the bottom-ab controls affect
+// 'a' = panel A only, 'sync' = both (synced), 'b' = panel B only
+let operMode = 'sync';
+
+// isSyncMode: sync stepping/playback is active when AB mode + operMode=sync
+function isSyncMode() { return mode === 'ab' && operMode === 'sync'; }
+
+// Per-panel rVFC estimation state
+const panelState = {
+    1: { fps: 30, fpsDetected: false, detecting: false, isVFR: false },
+    2: { fps: 30, fpsDetected: false, detecting: false, isVFR: false }
+};
+
+// Container analysis result (authoritative frame timing source)
+const mp4Analysis = {
+    1: { status: 'none', pts: null, codec: '?', fps: null, isVFR: false,
+         frameCount: 0, parseMs: 0, error: '' },
+    2: { status: 'none', pts: null, codec: '?', fps: null, isVFR: false,
+         frameCount: 0, parseMs: 0, error: '' }
+};
+
+// Load timing for debug panel
+const loadTiming = {
+    1: { fileSelectMs: 0, metadataMs: 0, firstFrameMs: 0, canPlayMs: 0, fileBytes: 0 },
+    2: { fileSelectMs: 0, metadataMs: 0, firstFrameMs: 0, canPlayMs: 0, fileBytes: 0 }
+};
+
+// Frame step timing
+const stepTiming = { 1: [], 2: [] };
+
+// rVFC frame cache
+const frameCache = {
+    1: { times: [] },
+    2: { times: [] }
+};
+
+// Pending steps for single-tap buffering
+const pendingSteps = { 1: 0, 2: 0 };
+
+// SW update reference
+let pendingSW = null;
+
+// Sync anchor points
+const syncPoints = { 1: null, 2: null };
+
+// Vector drawing storage
+const ds = {
+    1: { objects: [], current: null },
+    2: { objects: [], current: null }
+};
+
+// Zoom state
+const zm = {
+    1: { scale:1, panX:0, panY:0, pinching:false, lastDist:0, lastMidX:0, lastMidY:0, justPinched:false },
+    2: { scale:1, panX:0, panY:0, pinching:false, lastDist:0, lastMidX:0, lastMidY:0, justPinched:false }
+};
+
+// RAF render throttle
+const renderPending = { 1: false, 2: false };
+
+// Long-press state
+let lpHoldTimer  = null;
+let lpRepeatTimer = null;
+let lpActive     = false;
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+    [1, 2].forEach(p => { initCanvas(p); initVideoEvents(p); });
+    initLongPress();
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('click', e => {
+        if (!e.target.closest('#zoomPopup') && !e.target.closest('#zoomBtn')) hideZoomPopup();
+    });
+    window.addEventListener('resize', () => [1,2].forEach(p => resizeCanvas(p)));
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) stopLP();
+    });
+    window.addEventListener('orientationchange', () => stopLP());
+
+    // Service Worker registration
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js', { scope: './' })
+                .then(reg => {
+                    console.log('[SW] registered, scope:', reg.scope);
+                    const showUpdateBanner = (waiting) => {
+                        pendingSW = waiting;
+                        document.getElementById('updateBanner').classList.remove('hidden');
+                    };
+                    if (reg.waiting) showUpdateBanner(reg.waiting);
+                    reg.addEventListener('updatefound', () => {
+                        const nw = reg.installing;
+                        nw.addEventListener('statechange', () => {
+                            if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+                                showUpdateBanner(nw);
+                            }
+                        });
+                    });
+                })
+                .catch(e => console.warn('[SW] register failed:', e));
+
+            let swReloading = false;
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (swReloading) return;
+                swReloading = true;
+                location.reload();
+            });
+        });
+    }
+
+    // Long-press on version label → toggle debug panel
+    const vl = document.getElementById('vLabel');
+    if (vl) {
+        let vlTimer = null;
+        vl.addEventListener('pointerdown', () => {
+            vlTimer = setTimeout(() => { vlTimer=null; toggleDebugPanel(); }, 600);
+        });
+        vl.addEventListener('pointerup',     () => { if(vlTimer){clearTimeout(vlTimer);vlTimer=null;} });
+        vl.addEventListener('pointercancel', () => { if(vlTimer){clearTimeout(vlTimer);vlTimer=null;} });
+    }
+});
+
+// ════════════════════════════════════════
+// LONG PRESS
+// ════════════════════════════════════════
+function stopLP() {
+    lpActive = false;
+    if (lpHoldTimer)   { clearTimeout(lpHoldTimer);   lpHoldTimer   = null; }
+    if (lpRepeatTimer) { clearInterval(lpRepeatTimer); lpRepeatTimer = null; }
+    pendingSteps[1] = 0;
+    pendingSteps[2] = 0;
+}
+
+function setupLP(el, tapFn, lpFn) {
+    if (!el) return;
+    el.addEventListener('pointerdown', e => {
+        e.preventDefault();
+        try { el.setPointerCapture(e.pointerId); } catch(_) {}
+        stopLP();
+        lpActive = true;
+        tapFn();
+        lpHoldTimer = setTimeout(() => {
+            lpHoldTimer = null;
+            if (!lpActive) return;
+            lpRepeatTimer = setInterval(() => {
+                if (!lpActive) { stopLP(); return; }
+                lpFn();
+            }, 80);
+        }, 300);
+    });
+    el.addEventListener('pointermove', e => {
+        if (!lpActive) return;
+        const r = el.getBoundingClientRect();
+        const pad = 15;
+        if (e.clientX < r.left-pad || e.clientX > r.right+pad ||
+            e.clientY < r.top-pad  || e.clientY > r.bottom+pad) {
+            stopLP();
+        }
+    });
+    el.addEventListener('pointerup',          stopLP);
+    el.addEventListener('pointercancel',      stopLP);
+    el.addEventListener('lostpointercapture', stopLP);
+    el.addEventListener('contextmenu',        e => e.preventDefault());
+}
+
+function initLongPress() {
+    // Per-panel buttons in seek rows (single mode)
+    setupLP(document.getElementById('sk1p5'),
+        () => stepPanelFrame(1, -5, false), () => stepPanelFrame(1, -5, true));
+    setupLP(document.getElementById('sk1p1'),
+        () => stepPanelFrame(1, -1, false), () => stepPanelFrame(1, -1, true));
+    setupLP(document.getElementById('sk1n1'),
+        () => stepPanelFrame(1,  1, false), () => stepPanelFrame(1,  1, true));
+    setupLP(document.getElementById('sk1n5'),
+        () => stepPanelFrame(1,  5, false), () => stepPanelFrame(1,  5, true));
+    setupLP(document.getElementById('sk2p5'),
+        () => stepPanelFrame(2, -5, false), () => stepPanelFrame(2, -5, true));
+    setupLP(document.getElementById('sk2p1'),
+        () => stepPanelFrame(2, -1, false), () => stepPanelFrame(2, -1, true));
+    setupLP(document.getElementById('sk2n1'),
+        () => stepPanelFrame(2,  1, false), () => stepPanelFrame(2,  1, true));
+    setupLP(document.getElementById('sk2n5'),
+        () => stepPanelFrame(2,  5, false), () => stepPanelFrame(2,  5, true));
+
+    // Bottom-ab unified step buttons (route via operMode)
+    setupLP(document.getElementById('ab-p5'),
+        () => stepOper(-5, false), () => stepOper(-5, true));
+    setupLP(document.getElementById('ab-p1'),
+        () => stepOper(-1, false), () => stepOper(-1, true));
+    setupLP(document.getElementById('ab-n1'),
+        () => stepOper( 1, false), () => stepOper( 1, true));
+    setupLP(document.getElementById('ab-n5'),
+        () => stepOper( 5, false), () => stepOper( 5, true));
+}
+
+// ════════════════════════════════════════
+// OPER MODE  (A|B mode control routing)
+// ════════════════════════════════════════
+//
+// operMode controls which panel(s) the unified bottom-ab buttons affect:
+//   'a'    → panel A only  (panel 1)
+//   'sync' → both panels, maintaining sync anchor offset
+//   'b'    → panel B only  (panel 2)
+//
+// Sync design decision: when operMode='a' or 'b', individual panel is
+// controlled without affecting the other. The sync anchor points are
+// preserved even when not in sync mode — switching back to 'sync'
+// re-enables them. The timeupdate sync follower is only active when
+// isSyncMode() is true during PLAYBACK.
+
+function setOperMode(m) {
+    operMode = m;
+    stopLP();
+    document.getElementById('operA').classList.toggle('active',    m === 'a');
+    document.getElementById('operSync').classList.toggle('active', m === 'sync');
+    document.getElementById('operB').classList.toggle('active',    m === 'b');
+    updateSyncStatus();
+}
+
+// Step frames routing for bottom-ab buttons
+function stepOper(n, fromLP) {
+    if (operMode === 'a') {
+        stepPanelFrame(1, n, fromLP);
+    } else if (operMode === 'b') {
+        stepPanelFrame(2, n, fromLP);
+    } else {
+        // sync: use panel 1 as primary (isSyncMode() triggers _stepSync inside)
+        stepPanelFrame(1, n, fromLP);
+    }
+}
+
+// Play/pause routing for bottom-ab play button and top-right button
+function toggleOper() {
+    if (operMode === 'a') {
+        togglePanelPlay(1);
+    } else if (operMode === 'b') {
+        togglePanelPlay(2);
+    } else {
+        // sync: play/pause both panels
+        const v1 = document.getElementById('video1');
+        const v2 = document.getElementById('video2');
+        const paused = v1.paused;
+        if (paused) {
+            if (v1.src && v1.duration) v1.play();
+            if (v2.src && v2.duration) v2.play();
+        } else {
+            if (v1.src) v1.pause();
+            if (v2.src) v2.pause();
+        }
+    }
+}
+
+// Set speed for operMode target
+function setSpeedOper(r) {
+    const rate = parseFloat(r);
+    if (operMode === 'a') {
+        document.getElementById('video1').playbackRate = rate;
+    } else if (operMode === 'b') {
+        document.getElementById('video2').playbackRate = rate;
+    } else {
+        document.getElementById('video1').playbackRate = rate;
+        document.getElementById('video2').playbackRate = rate;
+    }
+}
+
+// Update the sync status message in bottom-ab row 2
+function updateSyncStatus() {
+    const msg = document.getElementById('ab-sync-msg');
+    const actions = document.getElementById('ab-anchor-actions');
+    if (!msg) return;
+    const sp1 = syncPoints[1], sp2 = syncPoints[2];
+    const bothSet = sp1 !== null && sp2 !== null;
+
+    if (actions) actions.style.display = bothSet ? 'flex' : 'none';
+
+    if (operMode !== 'sync') {
+        msg.textContent = `${operMode === 'a' ? 'A' : 'B'} 個別操作モード`;
+        msg.style.color = 'var(--accent-dim)';
+        return;
+    }
+    if (!sp1 && !sp2) {
+        msg.textContent = 'AとBの基準点を設定してください';
+        msg.style.color = 'var(--accent-dim)';
+    } else if (!sp1) {
+        msg.textContent = 'A の基準点を設定してください';
+        msg.style.color = 'var(--accent-dim)';
+    } else if (!sp2) {
+        msg.textContent = 'B の基準点を設定してください';
+        msg.style.color = 'var(--accent-dim)';
+    } else {
+        const diff = (sp2 - sp1).toFixed(2);
+        msg.textContent = `同期 ON｜A⟷B 差: ${diff}s`;
+        msg.style.color = 'var(--accent)';
+    }
+}
+
+// ════════════════════════════════════════
+// MODE
+// ════════════════════════════════════════
+function setMode(m) {
+    stopLP();
+    mode = m;
+
+    document.getElementById('modeA').classList.toggle('active',  m === 'a');
+    document.getElementById('modeAB').classList.toggle('active', m === 'ab');
+    document.getElementById('modeB').classList.toggle('active',  m === 'b');
+
+    const p1 = document.getElementById('panel1');
+    const p2 = document.getElementById('panel2');
+    p1.style.display = (m === 'a' || m === 'ab') ? 'flex' : 'none';
+    if (p1.style.display === 'flex') p1.style.flexDirection = 'column';
+    p2.style.display = (m === 'b' || m === 'ab') ? 'flex' : 'none';
+    if (p2.style.display === 'flex') p2.style.flexDirection = 'column';
+
+    // Show/hide bottom-ab bar + compact seek rows
+    const isAB = (m === 'ab');
+    document.getElementById('bottom-ab').classList.toggle('visible', isAB);
+    document.getElementById('seekRow1').classList.toggle('compact', isAB);
+    document.getElementById('seekRow2').classList.toggle('compact', isAB);
+
+    activePanel = (m === 'b') ? 2 : 1;
+    setTimeout(() => [1,2].forEach(p => resizeCanvas(p)), 60);
+}
+
+// ════════════════════════════════════════
+// VIDEO LOADING
+// ════════════════════════════════════════
+//
+// v2.3 improvements over v2.2:
+//  1. preload="auto" (HTML attr) → browser starts buffering immediately
+//  2. Removed vid.currentTime = 0.001 seek (delayed first frame display)
+//  3. analyzeVideoFile deferred to AFTER first frame is shown
+//     → browser can focus I/O on decoding first frame, not competing
+//     with JS File.slice reads for the moov box
+//
+// Goal: file-select → first frame visible in <1s for local device videos.
+
+function triggerLoad(p) { document.getElementById('fi'+p).click(); }
+
+function loadVideo(p, input) {
+    const file = input.files[0];
+    if (!file) return;
+    const vid = document.getElementById('video'+p);
+
+    stopLP();
+
+    document.getElementById('loading'+p).classList.remove('hidden');
+    document.getElementById('loading'+p+'-txt').textContent = '読み込み中...';
+
+    if (vid._blobUrl) { URL.revokeObjectURL(vid._blobUrl); vid._blobUrl = null; }
+
+    panelState[p] = { fps: 30, fpsDetected: false, detecting: false, isVFR: false };
+    mp4Analysis[p] = { status: 'none', pts: null, codec: '?', fps: null,
+                       isVFR: false, frameCount: 0, parseMs: 0, error: '' };
+    frameCache[p].times = [];
+    pendingSteps[p] = 0;
+
+    const t0 = performance.now();
+    loadTiming[p] = { fileSelectMs: t0, metadataMs: 0, firstFrameMs: 0,
+                      canPlayMs: 0, fileBytes: file.size };
+
+    updateFPSBadge(p);
+
+    const url = URL.createObjectURL(file);
+    vid._blobUrl = url;
+    vid.src = url;
+    document.getElementById('dz'+p).classList.add('hidden');
+
+    // Hide loading when first frame is decoded
+    const hideLoad = () => {
+        document.getElementById('loading'+p).classList.add('hidden');
+    };
+
+    vid.addEventListener('loadedmetadata', () => {
+        loadTiming[p].metadataMs = performance.now() - t0;
+        // Update loading text to show progress
+        document.getElementById('loading'+p+'-txt').textContent = 'フレーム準備中...';
+        resizeCanvas(p);
+        updateTime(p);
+        // NOTE: v2.3 removes the vid.currentTime = 0.001 seek that was here.
+        // The browser will show frame 0 automatically once loadeddata fires.
+        // This reduces one unnecessary seek operation before first frame display.
+    }, { once: true });
+
+    vid.addEventListener('loadeddata', () => {
+        loadTiming[p].firstFrameMs = performance.now() - t0;
+        hideLoad();
+        // Defer MP4 analysis until AFTER first frame shown.
+        // This avoids competing with the browser's File I/O for video decode.
+        analyzeVideoFile(p, file);
+        updateDebugPanel(p);
+    }, { once: true });
+
+    vid.addEventListener('canplay', () => {
+        loadTiming[p].canPlayMs = performance.now() - t0;
+        updateDebugPanel(p);
+    }, { once: true });
+
+    // Fallback: hide loading after 6s regardless
+    const fbTimer = setTimeout(hideLoad, 6000);
+    vid.addEventListener('loadeddata', () => clearTimeout(fbTimer), { once: true });
+    vid.addEventListener('error', () => {
+        clearTimeout(fbTimer); hideLoad();
+        mp4Analysis[p].status = 'error'; mp4Analysis[p].error = 'Video load error';
+        showToast('読み込みエラー');
+    }, { once: true });
+
+    input.value = '';
+    showToast(`動画 ${p===1?'A':'B'} を読み込んでいます...`);
+}
+
+// ════════════════════════════════════════
+// FPS DETECTION  (requestVideoFrameCallback)
+// ════════════════════════════════════════
+const KNOWN_FPS = [24, 25, 29.97, 30, 50, 59.94, 60, 120, 240];
+
+function snapFPS(fps) {
+    return KNOWN_FPS.reduce((a, b) => Math.abs(b - fps) < Math.abs(a - fps) ? b : a);
+}
+
+function startFPSDetection(p) {
+    const vid = document.getElementById('video'+p);
+    if (!('requestVideoFrameCallback' in HTMLVideoElement.prototype)) {
+        panelState[p].fpsDetected = false;
+        panelState[p].detecting   = false;
+        updateFPSBadge(p);
+        return;
+    }
+
+    const measurements = [];
+    let lastPF = null;
+    let lastMT = null;
+
+    function onFrame(_, meta) {
+        cacheFrameTime(p, meta.mediaTime);
+        if (lastPF !== null) {
+            const pfDelta   = meta.presentedFrames - lastPF;
+            const timeDelta = meta.mediaTime - lastMT;
+            if (pfDelta > 0 && timeDelta > 0.001 && timeDelta < 0.5) {
+                measurements.push(pfDelta / timeDelta);
+            }
+        }
+        lastPF = meta.presentedFrames;
+        lastMT = meta.mediaTime;
+        if (measurements.length < 12) {
+            vid.requestVideoFrameCallback(onFrame);
+        } else {
+            panelState[p].detecting = false;
+            finalizeDetection(p, measurements);
+            _continueCaching(p);
+        }
+    }
+    vid.requestVideoFrameCallback(onFrame);
+}
+
+function _continueCaching(p) {
+    if (!('requestVideoFrameCallback' in HTMLVideoElement.prototype)) return;
+    const vid = document.getElementById('video'+p);
+    if (vid.paused || vid.ended) return;
+    function cacheFrame(_, meta) {
+        cacheFrameTime(p, meta.mediaTime);
+        if (!vid.paused && !vid.ended) vid.requestVideoFrameCallback(cacheFrame);
+    }
+    vid.requestVideoFrameCallback(cacheFrame);
+}
+
+function finalizeDetection(p, measurements) {
+    const sorted = [...measurements].sort((a, b) => a - b);
+    const median = sorted[Math.floor(sorted.length / 2)];
+    const lo = sorted[Math.floor(sorted.length * 0.1)];
+    const hi = sorted[Math.floor(sorted.length * 0.9)];
+    const isVFR = (hi - lo) > median * 0.25;
+    if (isVFR) {
+        panelState[p].isVFR       = true;
+        panelState[p].fpsDetected = false;
+    } else {
+        panelState[p].fps         = snapFPS(median);
+        panelState[p].fpsDetected = true;
+        panelState[p].isVFR       = false;
+    }
+    updateFPSBadge(p);
+    updateDebugPanel(p);
+}
+
+// ════════════════════════════════════════
+// MP4/MOV CONTAINER PARSER
+// ════════════════════════════════════════
+function readSlice(file, start, end) {
+    return new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = e => resolve(e.target.result);
+        r.onerror = reject;
+        r.readAsArrayBuffer(file.slice(start, end));
+    });
+}
+
+function _fcc(dv, pos) {
+    let s = '';
+    for (let i = 0; i < 4; i++) s += String.fromCharCode(dv.getUint8(pos + i));
+    return s;
+}
+
+function _findBoxes(dv, start, end, type) {
+    const results = [];
+    let pos = start;
+    while (pos + 8 <= end) {
+        const sz = dv.getUint32(pos, false);
+        if (sz < 8) { pos++; continue; }
+        const t = _fcc(dv, pos + 4);
+        const boxEnd = Math.min(pos + sz, end);
+        if (t === type) results.push([pos + 8, boxEnd]);
+        pos += sz;
+    }
+    return results;
+}
+function _findBox(dv, start, end, type) {
+    const r = _findBoxes(dv, start, end, type);
+    return r.length ? r[0] : null;
+}
+
+function _parseTrak(dv, start, end) {
+    const mdiaR = _findBox(dv, start, end, 'mdia');
+    if (!mdiaR) return null;
+    const [mdiaS, mdiaE] = mdiaR;
+    const hdlrR = _findBox(dv, mdiaS, mdiaE, 'hdlr');
+    if (!hdlrR) return null;
+    if (_fcc(dv, hdlrR[0] + 8) !== 'vide') return null;
+    const mdhdR = _findBox(dv, mdiaS, mdiaE, 'mdhd');
+    if (!mdhdR) return null;
+    const mdhdVer = dv.getUint8(mdhdR[0]);
+    const timescale = mdhdVer === 1
+        ? dv.getUint32(mdhdR[0] + 20, false)
+        : dv.getUint32(mdhdR[0] + 12, false);
+    if (!timescale) return null;
+    let codec = '?';
+    const minfR = _findBox(dv, mdiaS, mdiaE, 'minf');
+    if (minfR) {
+        const stblR = _findBox(dv, minfR[0], minfR[1], 'stbl');
+        if (stblR) {
+            const stsdR = _findBox(dv, stblR[0], stblR[1], 'stsd');
+            if (stsdR && stsdR[1] - stsdR[0] >= 12) {
+                codec = _fcc(dv, stsdR[0] + 8);
+            }
+            const pts = _buildPTS(dv, stblR[0], stblR[1], timescale);
+            if (!pts || pts.length === 0) return null;
+            return { pts, timescale, codec };
+        }
+    }
+    return null;
+}
+
+function _buildPTS(dv, stblS, stblE, timescale) {
+    const sttsR = _findBox(dv, stblS, stblE, 'stts');
+    if (!sttsR) return null;
+    const [sttsS, sttsE] = sttsR;
+    const entryCount = dv.getUint32(sttsS + 4, false);
+    const dts = [];
+    let pos = sttsS + 8, cur = 0;
+    for (let i = 0; i < entryCount && pos + 8 <= sttsE; i++) {
+        const sc = dv.getUint32(pos,     false);
+        const sd = dv.getUint32(pos + 4, false);
+        for (let j = 0; j < sc; j++) { dts.push(cur); cur += sd; }
+        pos += 8;
+    }
+    if (dts.length === 0) return null;
+    const cts = new Int32Array(dts.length);
+    const cttsR = _findBox(dv, stblS, stblE, 'ctts');
+    if (cttsR) {
+        const [cttsS, cttsE] = cttsR;
+        const cttsVer = dv.getUint8(cttsS);
+        const cc = dv.getUint32(cttsS + 4, false);
+        let cp = cttsS + 8, ci = 0;
+        for (let i = 0; i < cc && cp + 8 <= cttsE && ci < dts.length; i++) {
+            const sc  = dv.getUint32(cp, false);
+            const off = cttsVer === 1 ? dv.getInt32(cp + 4, false) : dv.getUint32(cp + 4, false);
+            for (let j = 0; j < sc && ci < dts.length; j++, ci++) cts[ci] = off;
+            cp += 8;
+        }
+    }
+    const pts = dts.map((d, i) => (d + cts[i]) / timescale);
+    pts.sort((a, b) => a - b);
+    const uniq = [pts[0]];
+    for (let i = 1; i < pts.length; i++) {
+        if (pts[i] - pts[i-1] > 0.0001) uniq.push(pts[i]);
+    }
+    return uniq;
+}
+
+function _parseMoov(dv, start, end) {
+    for (const [ts, te] of _findBoxes(dv, start, end, 'trak')) {
+        const result = _parseTrak(dv, ts, te);
+        if (result) {
+            const edtsR = _findBox(dv, ts, te, 'edts');
+            if (edtsR) result.pts = _applyElst(dv, edtsR[0], edtsR[1], result.pts, result.timescale);
+            return result;
+        }
+    }
+    return null;
+}
+
+function _applyElst(dv, edtsS, edtsE, pts, timescale) {
+    const elstR = _findBox(dv, edtsS, edtsE, 'elst');
+    if (!elstR) return pts;
+    const [es] = elstR;
+    const ver  = dv.getUint8(es);
+    const ec   = dv.getUint32(es + 4, false);
+    if (ec !== 1) return pts;
+    let mediaTime;
+    if (ver === 1) {
+        mediaTime = dv.getUint32(es + 16, false);
+    } else {
+        mediaTime = dv.getUint32(es + 12, false);
+    }
+    const offset = mediaTime / timescale;
+    if (offset < 0.001) return pts;
+    return pts.map(t => Math.max(0, t - offset));
+}
+
+function _tryFindMoov(buf) {
+    const dv = new DataView(buf);
+    const size = dv.byteLength;
+    let pos = 0;
+    while (pos + 8 <= size) {
+        const sz = dv.getUint32(pos, false);
+        if (sz < 8 || sz > size - pos + 1024) { pos += 4; continue; }
+        const t = _fcc(dv, pos + 4);
+        if (t === 'moov') return _parseMoov(dv, pos + 8, pos + Math.min(sz, size));
+        pos += sz;
+    }
+    return null;
+}
+
+async function analyzeVideoFile(p, file) {
+    const a = mp4Analysis[p];
+    a.status = 'analyzing';
+    updateFPSBadge(p);
+    updateDebugPanel(p);
+
+    const t0 = performance.now();
+    try {
+        const headSize = Math.min(file.size, 2 * 1024 * 1024);
+        const headBuf  = await readSlice(file, 0, headSize);
+        let result = _tryFindMoov(headBuf);
+
+        if (!result && file.size > 2 * 1024 * 1024) {
+            const tailStart = Math.max(0, file.size - 2 * 1024 * 1024);
+            const tailBuf   = await readSlice(file, tailStart, file.size);
+            result = _tryFindMoov(tailBuf);
+        }
+
+        a.parseMs = performance.now() - t0;
+
+        if (result) {
+            a.status     = 'done';
+            a.pts        = result.pts;
+            a.codec      = result.codec;
+            a.frameCount = result.pts.length;
+
+            if (result.pts.length > 4) {
+                const diffs = [];
+                for (let i = 1; i < Math.min(result.pts.length, 60); i++)
+                    diffs.push(result.pts[i] - result.pts[i-1]);
+                diffs.sort((a, b) => a - b);
+                const lo  = diffs[Math.floor(diffs.length * 0.1)];
+                const hi  = diffs[Math.floor(diffs.length * 0.9)];
+                const med = diffs[Math.floor(diffs.length / 2)];
+                a.isVFR   = (hi - lo) > med * 0.15;
+                a.fps     = a.isVFR ? null : snapFPS(1 / med);
+            }
+        } else {
+            a.status = 'unsupported';
+            a.error  = 'moov box not found';
+        }
+    } catch (e) {
+        a.status = 'error';
+        a.error  = String(e);
+        a.parseMs = performance.now() - t0;
+    }
+
+    updateFPSBadge(p);
+    updateDebugPanel(p);
+}
+
+function updateFPSBadge(p) {
+    const badge = document.getElementById('fps'+p);
+    const a  = mp4Analysis[p];
+    const ps = panelState[p];
+    badge.classList.remove('hidden');
+    if (a.status === 'done') {
+        if (a.isVFR) {
+            badge.textContent = 'VFR';
+            badge.className   = 'fps-badge';
+        } else if (a.fps) {
+            badge.textContent = a.fps + 'fps';
+            badge.className   = 'fps-badge detected';
+        } else {
+            badge.textContent = '?fps';
+            badge.className   = 'fps-badge';
+        }
+    } else if (a.status === 'analyzing') {
+        badge.textContent = '…fps';
+        badge.className   = 'fps-badge';
+    } else {
+        if (ps.fpsDetected) {
+            badge.textContent = '~' + ps.fps + 'fps';
+        } else {
+            badge.textContent = '~fps';
+        }
+        badge.className = 'fps-badge';
+    }
+}
+
+// ════════════════════════════════════════
+// CANVAS
+// ════════════════════════════════════════
+function initCanvas(p) {
+    resizeCanvas(p);
+    setupDraw(p);
+}
+
+function resizeCanvas(p) {
+    const wrapper = document.getElementById('wrapper'+p);
+    const canvas  = document.getElementById('canvas'+p);
+    const W = wrapper.offsetWidth, H = wrapper.offsetHeight;
+    if (!W || !H) return;
+    canvas.width  = W;
+    canvas.height = H;
+    renderDrawings(p);
+}
+
+function getVideoRect(p) {
+    const vid    = document.getElementById('video'+p);
+    const canvas = document.getElementById('canvas'+p);
+    const W = canvas.width, H = canvas.height;
+    if (!W || !H) return { x:0, y:0, w:W||1, h:H||1 };
+    const vW = vid.videoWidth, vH = vid.videoHeight;
+    if (!vW || !vH) return { x:0, y:0, w:W, h:H };
+    const vAR = vW / vH, cAR = W / H;
+    let w, h;
+    if (vAR > cAR) { w = W; h = W / vAR; }
+    else           { h = H; w = H * vAR; }
+    return { x:(W-w)/2, y:(H-h)/2, w, h };
+}
+
+function toNorm(p, cx, cy) {
+    const r = getVideoRect(p);
+    return { x:(cx - r.x) / r.w, y:(cy - r.y) / r.h };
+}
+
+// ════════════════════════════════════════
+// DRAWING — VECTOR-BASED
+// ════════════════════════════════════════
+function scheduleRender(p) {
+    if (renderPending[p]) return;
+    renderPending[p] = true;
+    requestAnimationFrame(() => { renderPending[p] = false; renderDrawings(p); });
+}
+
+function renderDrawings(p) {
+    const canvas = document.getElementById('canvas'+p);
+    const ctx    = canvas.getContext('2d');
+    const r      = getVideoRect(p);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (const obj of ds[p].objects) _drawObj(ctx, obj, r);
+    if (ds[p].current) _drawObj(ctx, ds[p].current, r);
+}
+
+function _drawObj(ctx, obj, r) {
+    const c = (nx, ny) => ({ x: r.x + nx * r.w, y: r.y + ny * r.h });
+    ctx.save();
+    ctx.strokeStyle = obj.color;
+    ctx.fillStyle   = obj.color;
+    ctx.lineWidth   = obj.size;
+    ctx.lineCap     = 'round';
+    ctx.lineJoin    = 'round';
+
+    if (obj.type === 'eraser') {
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.lineWidth = obj.size * 5;
+        const pts = obj.pts;
+        if (pts && pts.length > 1) {
+            ctx.beginPath();
+            const p0 = c(pts[0].x, pts[0].y);
+            ctx.moveTo(p0.x, p0.y);
+            for (let i = 1; i < pts.length; i++) { const pi = c(pts[i].x, pts[i].y); ctx.lineTo(pi.x, pi.y); }
+            ctx.stroke();
+        }
+    } else if (obj.type === 'pen') {
+        const pts = obj.pts;
+        if (!pts || pts.length === 0) { ctx.restore(); return; }
+        if (pts.length === 1) {
+            const p0 = c(pts[0].x, pts[0].y);
+            ctx.beginPath(); ctx.arc(p0.x, p0.y, obj.size / 2, 0, Math.PI*2); ctx.fill();
+        } else {
+            ctx.beginPath();
+            const p0 = c(pts[0].x, pts[0].y);
+            ctx.moveTo(p0.x, p0.y);
+            for (let i = 1; i < pts.length; i++) { const pi = c(pts[i].x, pts[i].y); ctx.lineTo(pi.x, pi.y); }
+            ctx.stroke();
+        }
+    } else if (obj.type === 'line') {
+        const p1 = c(obj.x1, obj.y1), p2 = c(obj.x2, obj.y2);
+        ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+    } else if (obj.type === 'arrow') {
+        const p1 = c(obj.x1, obj.y1), p2 = c(obj.x2, obj.y2);
+        const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x);
+        const h = Math.max(12, obj.size * 5);
+        ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(p2.x, p2.y);
+        ctx.lineTo(p2.x - h*Math.cos(angle - Math.PI/6), p2.y - h*Math.sin(angle - Math.PI/6));
+        ctx.lineTo(p2.x - h*Math.cos(angle + Math.PI/6), p2.y - h*Math.sin(angle + Math.PI/6));
+        ctx.closePath(); ctx.fill();
+    } else if (obj.type === 'circle') {
+        const p1 = c(obj.x1, obj.y1), p2 = c(obj.x2, obj.y2);
+        const rx = Math.abs(p2.x - p1.x) / 2, ry = Math.abs(p2.y - p1.y) / 2;
+        if (rx < 1 && ry < 1) { ctx.restore(); return; }
+        ctx.beginPath();
+        ctx.ellipse((p1.x+p2.x)/2, (p1.y+p2.y)/2, Math.max(rx,0.5), Math.max(ry,0.5), 0, 0, Math.PI*2);
+        ctx.stroke();
+    } else if (obj.type === 'rect') {
+        const p1 = c(obj.x1, obj.y1), p2 = c(obj.x2, obj.y2);
+        ctx.strokeRect(p1.x, p1.y, p2.x - p1.x, p2.y - p1.y);
+    }
+    ctx.restore();
+}
+
+// ════════════════════════════════════════
+// DRAWING — INPUT (touch / mouse)
+// ════════════════════════════════════════
+function setupDraw(p) {
+    const canvas = document.getElementById('canvas'+p);
+
+    canvas.addEventListener('mousedown',  e => { e.preventDefault(); activePanel=p; _startDraw(p,e); });
+    canvas.addEventListener('mousemove',  e => { e.preventDefault(); _moveDraw(p,e); });
+    canvas.addEventListener('mouseup',    e => { e.preventDefault(); _endDraw(p,e); });
+    canvas.addEventListener('mouseleave', e => { if (drawing && activePanel===p) _endDraw(p,e); });
+    canvas.addEventListener('wheel', e => {
+        e.preventDefault(); activePanel=p;
+        adjustZoom(p, e.deltaY < 0 ? 0.2 : -0.2);
+    }, { passive:false });
+
+    canvas.addEventListener('touchstart', e => {
+        e.preventDefault(); activePanel=p;
+        if (e.touches.length >= 2) {
+            if (drawing) { drawing=false; ds[p].current=null; renderDrawings(p); }
+            _startPinch(p, e);
+        } else if (e.touches.length === 1 && !zm[p].pinching && !zm[p].justPinched) {
+            _startDraw(p, e.touches[0]);
+        }
+    }, { passive:false });
+
+    canvas.addEventListener('touchmove', e => {
+        e.preventDefault();
+        if (e.touches.length >= 2) _movePinch(p, e);
+        else if (!zm[p].pinching && !zm[p].justPinched) _moveDraw(p, e.touches[0]);
+    }, { passive:false });
+
+    canvas.addEventListener('touchend', e => {
+        e.preventDefault();
+        if (zm[p].pinching) {
+            if (e.touches.length < 2) {
+                zm[p].pinching = false;
+                zm[p].justPinched = true;
+                setTimeout(() => zm[p].justPinched = false, 300);
+            }
+        } else if (!zm[p].justPinched) {
+            _endDraw(p, e.changedTouches[0]);
+        }
+    }, { passive:false });
+}
+
+function _getPos(p, ev) {
+    const c = document.getElementById('canvas'+p);
+    const r = c.getBoundingClientRect();
+    return {
+        x: (ev.clientX - r.left) * (c.width  / r.width),
+        y: (ev.clientY - r.top)  * (c.height / r.height)
+    };
+}
+
+function _startDraw(p, ev) {
+    drawing = true;
+    const { x, y } = _getPos(p, ev);
+    const n = toNorm(p, x, y);
+    ds[p].current = {
+        type: tool, color, size: brushSize,
+        x1: n.x, y1: n.y, x2: n.x, y2: n.y,
+        pts: (tool === 'pen' || tool === 'eraser') ? [{ x:n.x, y:n.y }] : undefined
+    };
+    scheduleRender(p);
+}
+
+function _moveDraw(p, ev) {
+    if (!drawing || activePanel !== p || !ds[p].current) return;
+    const { x, y } = _getPos(p, ev);
+    const n = toNorm(p, x, y);
+    const cur = ds[p].current;
+    cur.x2 = n.x; cur.y2 = n.y;
+    if (cur.pts) cur.pts.push({ x:n.x, y:n.y });
+    scheduleRender(p);
+}
+
+function _endDraw(p, ev) {
+    if (!drawing || activePanel !== p) return;
+    drawing = false;
+    const { x, y } = _getPos(p, ev);
+    const n = toNorm(p, x, y);
+    const cur = ds[p].current;
+    if (cur) {
+        cur.x2 = n.x; cur.y2 = n.y;
+        if (cur.pts) cur.pts.push({ x:n.x, y:n.y });
+        const hasPts  = cur.pts && cur.pts.length > 0;
+        const hasDist = Math.hypot(cur.x2 - cur.x1, cur.y2 - cur.y1) > 0.0005;
+        if (hasPts || hasDist) ds[p].objects.push(cur);
+    }
+    ds[p].current = null;
+    scheduleRender(p);
+}
+
+function undoDraw() {
+    const s = ds[activePanel];
+    if (!s.objects.length) { showToast('これ以上元に戻せません'); return; }
+    s.objects.pop();
+    renderDrawings(activePanel);
+    showToast('元に戻しました');
+}
+
+function clearPanelDraw(p) {
+    ds[p].objects = []; ds[p].current = null;
+    renderDrawings(p);
+    activePanel = p;
+    showToast(`パネル ${p===1?'A':'B'} の描画をクリア`);
+}
+
+// ════════════════════════════════════════
+// TOOLS / COLOR
+// ════════════════════════════════════════
+function setTool(t) {
+    tool = t;
+    document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tool-'+t)?.classList.add('active');
+    document.body.className = document.body.className.replace(/\btool-\S+/g,'').trim() + ' tool-' + t;
+}
+function setColor(el) {
+    color = el.dataset.c;
+    document.querySelectorAll('.cdot').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+}
+
+// ════════════════════════════════════════
+// FRAME TIMESTAMP CACHE
+// ════════════════════════════════════════
+const MAX_CACHE = 600;
+
+function cacheFrameTime(p, t) {
+    const times = frameCache[p].times;
+    if (times.length === 0 || t > times[times.length - 1] + 0.0001) {
+        times.push(t);
+        if (times.length > MAX_CACHE * 2) {
+            frameCache[p].times = times.slice(MAX_CACHE);
+        }
+    }
+}
+
+function getNextFrameTime(p, currentTime) {
+    const pts = mp4Analysis[p].pts;
+    if (pts && pts.length > 1) {
+        let lo = 0, hi = pts.length;
+        while (lo < hi) {
+            const mid = (lo + hi) >>> 1;
+            if (pts[mid] <= currentTime + 0.0001) lo = mid + 1;
+            else hi = mid;
+        }
+        if (lo < pts.length) return pts[lo];
+    }
+    const fps = mp4Analysis[p].fps || panelState[p].fps || 30;
+    if (fps === 29.97) return currentTime + 1001 / 30000;
+    if (fps === 59.94) return currentTime + 1001 / 60000;
+    return currentTime + 1 / fps;
+}
+
+function getPrevFrameTime(p, currentTime) {
+    const pts = mp4Analysis[p].pts;
+    if (pts && pts.length > 1) {
+        let lo = 0, hi = pts.length;
+        while (lo < hi) {
+            const mid = (lo + hi) >>> 1;
+            if (pts[mid] < currentTime - 0.0001) lo = mid + 1;
+            else hi = mid;
+        }
+        if (lo > 0) return pts[lo - 1];
+    }
+    const fps = mp4Analysis[p].fps || panelState[p].fps || 30;
+    if (fps === 29.97) return Math.max(0, currentTime - 1001 / 30000);
+    if (fps === 59.94) return Math.max(0, currentTime - 1001 / 60000);
+    return Math.max(0, currentTime - 1 / fps);
+}
+
+// ════════════════════════════════════════
+// FRAME STEPPING
+// ════════════════════════════════════════
+function stepPanelFrame(p, n, fromLP) {
+    const vid = document.getElementById('video'+p);
+    if (!vid.src || !vid.duration) return;
+
+    vid.pause();
+
+    if (vid.seeking) {
+        if (!fromLP) {
+            if (Math.sign(n) !== Math.sign(pendingSteps[p] || 0)) pendingSteps[p] = 0;
+            pendingSteps[p] = (pendingSteps[p] || 0) + n;
+            if (Math.abs(pendingSteps[p]) > Math.abs(n) * 3) pendingSteps[p] = n;
+        }
+        return;
+    }
+
+    const totalN = n + (pendingSteps[p] || 0);
+    pendingSteps[p] = 0;
+    if (totalN === 0) return;
+
+    const tStep = performance.now();
+
+    if (isSyncMode()) {
+        let targetTime = vid.currentTime;
+        for (let i = 0; i < Math.abs(totalN); i++) {
+            targetTime = totalN > 0
+                ? getNextFrameTime(p, targetTime)
+                : getPrevFrameTime(p, targetTime);
+        }
+        const dt = targetTime - vid.currentTime;
+        _stepSync(p, dt);
+    } else {
+        let targetTime = vid.currentTime;
+        for (let i = 0; i < Math.abs(totalN); i++) {
+            targetTime = totalN > 0
+                ? getNextFrameTime(p, targetTime)
+                : getPrevFrameTime(p, targetTime);
+        }
+        vid.currentTime = Math.max(0, Math.min(vid.duration, targetTime));
+    }
+
+    const stepMs = performance.now() - tStep;
+    const st = stepTiming[p];
+    st.push(stepMs);
+    if (st.length > 20) st.shift();
+}
+
+function _stepSync(primaryP, dt) {
+    const v1 = document.getElementById('video1');
+    const v2 = document.getElementById('video2');
+    if (v1.src && v1.duration) v1.pause();
+    if (v2.src && v2.duration) v2.pause();
+
+    if (primaryP === 1 && v1.duration) {
+        const t1 = Math.max(0, Math.min(v1.duration, v1.currentTime + dt));
+        v1.currentTime = t1;
+        if (v2.duration) {
+            const t2 = (syncPoints[1] !== null && syncPoints[2] !== null)
+                ? syncPoints[2] + (t1 - syncPoints[1])
+                : v2.currentTime + dt;
+            v2.currentTime = Math.max(0, Math.min(v2.duration, t2));
+        }
+    } else if (primaryP === 2 && v2.duration) {
+        const t2 = Math.max(0, Math.min(v2.duration, v2.currentTime + dt));
+        v2.currentTime = t2;
+        if (v1.duration) {
+            const t1 = (syncPoints[1] !== null && syncPoints[2] !== null)
+                ? syncPoints[1] + (t2 - syncPoints[2])
+                : v1.currentTime + dt;
+            v1.currentTime = Math.max(0, Math.min(v1.duration, t1));
+        }
+    }
+}
+
+// ════════════════════════════════════════
+// SYNC POINTS
+// ════════════════════════════════════════
+function setSyncPoint(p) {
+    const vid = document.getElementById('video'+p);
+    if (!vid.duration) { showToast('動画を読み込んでください'); return; }
+    syncPoints[p] = vid.currentTime;
+
+    // Update the anchor button in bottom-ab
+    const btn = document.getElementById('ab-sp'+p);
+    if (btn) {
+        btn.innerHTML = `📌 ${p===1?'A':'B'} 基準点: ${ft(syncPoints[p])}`;
+        btn.classList.add('set');
+    }
+    _updateSyncDot(p);
+    updateSyncStatus();
+    showToast(`📌 ${p===1?'A':'B'} 基準点: ${ft(syncPoints[p])}`);
+}
+
+function resetSyncPoints() {
+    syncPoints[1] = null; syncPoints[2] = null;
+    ['ab-sp1','ab-sp2'].forEach((id, i) => {
+        const btn = document.getElementById(id);
+        if (btn) {
+            btn.innerHTML = `📌 ${i===0?'A':'B'} 基準点: 未設定`;
+            btn.classList.remove('set');
+        }
+    });
+    _updateSyncDot(1); _updateSyncDot(2);
+    updateSyncStatus();
+    showToast('同期基準点をリセット');
+}
+
+function gotoSyncAnchors() {
+    const v1 = document.getElementById('video1');
+    const v2 = document.getElementById('video2');
+    if (syncPoints[1] !== null && v1.duration) {
+        v1.pause(); v1.currentTime = syncPoints[1];
+    }
+    if (syncPoints[2] !== null && v2.duration) {
+        v2.pause(); v2.currentTime = syncPoints[2];
+    }
+    if (syncPoints[1] !== null || syncPoints[2] !== null)
+        showToast('基準点へ移動しました');
+}
+
+function _updateSyncDot(p) {
+    const vid = document.getElementById('video'+p);
+    const dot = document.getElementById('sdot'+p);
+    if (!dot) return;
+    if (syncPoints[p] === null || !vid.duration) { dot.style.display = 'none'; return; }
+    dot.style.left    = (syncPoints[p] / vid.duration * 100) + '%';
+    dot.style.display = 'block';
+}
+
+// ════════════════════════════════════════
+// ZOOM
+// ════════════════════════════════════════
+function toggleZoomPopup() {
+    zoomPopupOpen = !zoomPopupOpen;
+    document.getElementById('zoomPopup').classList.toggle('hidden', !zoomPopupOpen);
+    if (zoomPopupOpen) _updateZoomPopup(activePanel);
+}
+function hideZoomPopup() { zoomPopupOpen=false; document.getElementById('zoomPopup').classList.add('hidden'); }
+function _updateZoomPopup(p) {
+    const pct = Math.round(zm[p].scale * 100);
+    document.getElementById('zoomLabel').textContent = `ズーム: ${pct}%`;
+    document.getElementById('zoomSlider').value = pct;
+}
+function adjustZoom(p, delta) {
+    zm[p].scale = Math.max(0.5, Math.min(6, zm[p].scale + delta));
+    _clampPan(p); _applyZoom(p);
+}
+function setZoomValue(p, pct) {
+    zm[p].scale = Math.max(0.5, Math.min(6, pct / 100));
+    _clampPan(p); _applyZoom(p);
+}
+function resetZoom(p) {
+    zm[p].scale = 1; zm[p].panX = 0; zm[p].panY = 0;
+    _applyZoom(p); showToast('ズームをリセット'); hideZoomPopup();
+}
+function _clampPan(p) {
+    const z = zm[p], w = document.getElementById('wrapper'+p);
+    const W = w.offsetWidth, H = w.offsetHeight;
+    const mx = W*(z.scale-1)/2, my = H*(z.scale-1)/2;
+    z.panX = Math.max(-mx, Math.min(mx, z.panX));
+    z.panY = Math.max(-my, Math.min(my, z.panY));
+}
+function _applyZoom(p) {
+    const z = zm[p];
+    document.getElementById('zoom'+p).style.transform =
+        `translate(${z.panX}px,${z.panY}px) scale(${z.scale})`;
+    const pct = Math.round(z.scale * 100);
+    const ind = document.getElementById('zind'+p);
+    ind.textContent  = pct + '%';
+    ind.className    = 'zoom-badge' + (z.scale !== 1 ? ' zoomed' : '');
+    if (zoomPopupOpen) _updateZoomPopup(activePanel);
+}
+
+function _touchDist(e) {
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    return Math.sqrt(dx*dx + dy*dy);
+}
+function _touchMid(e) {
+    return {
+        x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+        y: (e.touches[0].clientY + e.touches[1].clientY) / 2
+    };
+}
+function _startPinch(p, e) {
+    const z = zm[p]; z.pinching=true; z.lastDist=_touchDist(e);
+    const m = _touchMid(e); z.lastMidX=m.x; z.lastMidY=m.y;
+}
+function _movePinch(p, e) {
+    const z = zm[p]; if (!z.pinching) return;
+    const nd = _touchDist(e), m = _touchMid(e);
+    z.scale  = Math.max(0.5, Math.min(6, z.scale * (nd / z.lastDist)));
+    z.panX  += m.x - z.lastMidX; z.panY += m.y - z.lastMidY;
+    z.lastDist=nd; z.lastMidX=m.x; z.lastMidY=m.y;
+    _clampPan(p); _applyZoom(p);
+}
+
+// ════════════════════════════════════════
+// VIDEO EVENTS
+// ════════════════════════════════════════
+function initVideoEvents(p) {
+    const vid  = document.getElementById('video'+p);
+    const seek = document.getElementById('seek'+p);
+
+    vid.addEventListener('timeupdate', () => {
+        if (seekingPanel === p) return;
+        seek.value = vid.duration ? vid.currentTime / vid.duration * 1000 : 0;
+        updateTime(p);
+        _updateSyncDot(p);
+
+        // Sync follower: panel 1 drives panel 2 during playback
+        if (isSyncMode() && p === 1) {
+            const v2 = document.getElementById('video2');
+            if (v2.duration) {
+                let t2;
+                if (syncPoints[1] !== null && syncPoints[2] !== null) {
+                    t2 = syncPoints[2] + (vid.currentTime - syncPoints[1]);
+                } else {
+                    t2 = vid.currentTime;
+                }
+                t2 = Math.max(0, Math.min(v2.duration, t2));
+                if (Math.abs(v2.currentTime - t2) > 0.08) v2.currentTime = t2;
+            }
+        }
+    });
+
+    seek.addEventListener('input', () => {
+        seekingPanel = p;
+        if (vid.duration) vid.currentTime = (seek.value / 1000) * vid.duration;
+        updateTime(p);
+    });
+    seek.addEventListener('change', () => { seekingPanel = 0; });
+
+    vid.addEventListener('play', () => {
+        updatePlayBtns(p);
+        if (!panelState[p].fpsDetected && !panelState[p].detecting) {
+            panelState[p].detecting = true;
+            startFPSDetection(p);
+        } else if (panelState[p].fpsDetected || panelState[p].isVFR) {
+            _continueCaching(p);
+        }
+    });
+    vid.addEventListener('pause', () => updatePlayBtns(p));
+    vid.addEventListener('ended', () => updatePlayBtns(p));
+
+    vid.addEventListener('seeked', () => {
+        const steps = pendingSteps[p];
+        if (steps) {
+            pendingSteps[p] = 0;
+            stepPanelFrame(p, steps);
+        }
+    });
+}
+
+function updateTime(p) {
+    const vid = document.getElementById('video'+p);
+    const s = vid.currentTime, d = vid.duration || 0;
+    const timeStr = `${ft(s)} / ${ft(d)}`;
+    document.getElementById('time'+p).textContent = timeStr;
+    // Also update bottom-ab time display
+    const abt = document.getElementById('ab-t'+p);
+    if (abt) abt.textContent = ft(s);
+}
+
+function ft(s) {
+    if (!isFinite(s) || s < 0) return '0:00.0';
+    const m   = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${m}:${Math.floor(sec).toString().padStart(2,'0')}.${Math.floor((sec % 1) * 10)}`;
+}
+
+function updatePlayBtns(p) {
+    const paused = document.getElementById('video'+p).paused;
+    const pb = document.getElementById('pplay'+p);
+    if (pb) pb.textContent = paused ? '▶' : '⏸';
+
+    // Top-right play button: reflects primary panel
+    const primary = (mode === 'b') ? 2 : 1;
+    if (p === primary) {
+        document.getElementById('playBtn').textContent = paused ? '▶' : '⏸';
+    }
+
+    // Bottom-ab play button: reflects operMode target
+    if (mode === 'ab') {
+        const operP = (operMode === 'b') ? 2 : 1; // panel 1 for a/sync, panel 2 for b
+        if (p === operP) {
+            const abPlay = document.getElementById('ab-play');
+            if (abPlay) abPlay.textContent = paused ? '▶' : '⏸';
+        }
+    }
+}
+
+// ════════════════════════════════════════
+// PLAYBACK
+// ════════════════════════════════════════
+function togglePanelPlay(p) {
+    const vid = document.getElementById('video'+p);
+    if (!vid.src || !vid.duration) { showToast('動画を読み込んでください'); return; }
+    vid.paused ? vid.play() : vid.pause();
+}
+function setPanelSpeed(p, r) { document.getElementById('video'+p).playbackRate = parseFloat(r); }
+
+function togglePlay() {
+    // Top-right global play button
+    if (mode === 'ab') {
+        toggleOper();
+    } else {
+        const p = (mode === 'b') ? 2 : 1;
+        togglePanelPlay(p);
+    }
+}
+
+// ════════════════════════════════════════
+// DEBUG PANEL
+// ════════════════════════════════════════
+function toggleDebugPanel() {
+    debugVisible = !debugVisible;
+    document.getElementById('debugPanel').classList.toggle('hidden', !debugVisible);
+    if (debugVisible) { updateDebugPanel(1); updateDebugPanel(2); }
+}
+
+function _fmtMs(ms) { return ms > 0 ? ms.toFixed(0) + 'ms' : '—'; }
+function _fmtBytes(b) {
+    if (!b) return '—';
+    if (b > 1e9) return (b/1e9).toFixed(1)+'GB';
+    if (b > 1e6) return (b/1e6).toFixed(1)+'MB';
+    return (b/1024).toFixed(0)+'KB';
+}
+
+function updateDebugPanel(p) {
+    if (!debugVisible) return;
+    const a  = mp4Analysis[p];
+    const lt = loadTiming[p];
+    const ps = panelState[p];
+    const st = stepTiming[p];
+    const lbl = p === 1 ? 'A' : 'B';
+
+    let fpsLine = '';
+    if (a.status === 'done') {
+        fpsLine = `fps=${a.fps||'VFR'} [container]`;
+    } else if (ps.fpsDetected) {
+        fpsLine = `fps≈${ps.fps} [rVFC推定・非確定]`;
+    } else {
+        fpsLine = `fps=未検出`;
+    }
+
+    const stepAvg = st.length
+        ? (st.reduce((s,v)=>s+v,0)/st.length).toFixed(1)+'ms/step'
+        : '—';
+
+    const lines = [
+        `${lbl}: ${a.status==='none'?'動画なし':''} ${_fmtBytes(lt.fileBytes)}`,
+        `codec=${a.codec} ${fpsLine}`,
+        a.status==='done'
+            ? `frames=${a.frameCount} parse=${_fmtMs(a.parseMs)}`
+            : `解析=${a.status}${a.error?' ('+a.error.slice(0,40)+')':''}`,
+        `metadata=${_fmtMs(lt.metadataMs)} 1stFrame=${_fmtMs(lt.firstFrameMs)} canPlay=${_fmtMs(lt.canPlayMs)}`,
+        `stepAvg=${stepAvg} (直近${st.length}回)`
+    ];
+
+    document.getElementById('dbg'+p).innerHTML = lines.map(l => `<div>${l}</div>`).join('');
+}
+
+function copyDebugInfo() {
+    const lines = [];
+    for (const p of [1, 2]) {
+        const a  = mp4Analysis[p];
+        const lt = loadTiming[p];
+        const ps = panelState[p];
+        const st = stepTiming[p];
+        const lbl = p === 1 ? 'A' : 'B';
+        lines.push(`=== Panel ${lbl} ===`);
+        lines.push(`App: v${APP_VERSION}, UA: ${navigator.userAgent}`);
+        lines.push(`File: ${_fmtBytes(lt.fileBytes)}`);
+        lines.push(`Codec: ${a.codec}`);
+        lines.push(`Container FPS: ${a.fps || (a.isVFR?'VFR':'?')} (${a.status})`);
+        lines.push(`rVFC FPS estimate: ${ps.fpsDetected ? ps.fps : '未検出'} (非確定)`);
+        lines.push(`Frames: ${a.frameCount}`);
+        lines.push(`Parse time: ${_fmtMs(a.parseMs)}`);
+        lines.push(`Load - metadata: ${_fmtMs(lt.metadataMs)}`);
+        lines.push(`Load - 1st frame: ${_fmtMs(lt.firstFrameMs)}`);
+        lines.push(`Load - canPlay: ${_fmtMs(lt.canPlayMs)}`);
+        const avg = st.length ? (st.reduce((s,v)=>s+v,0)/st.length).toFixed(1) : '—';
+        lines.push(`Step avg: ${avg}ms (${st.length}回計測)`);
+        if (a.error) lines.push(`Error: ${a.error}`);
+    }
+    navigator.clipboard?.writeText(lines.join('\n'))
+        .then(()=>showToast('デバッグ情報をコピーしました'))
+        .catch(()=>showToast('コピー失敗'));
+}
+
+// ════════════════════════════════════════
+// SERVICE WORKER UPDATE
+// ════════════════════════════════════════
+function applySWUpdate() {
+    if (pendingSW) {
+        pendingSW.postMessage({ type: 'SKIP_WAITING' });
+    } else {
+        location.reload();
+    }
+}
+
+// ════════════════════════════════════════
+// TOAST
+// ════════════════════════════════════════
+let _tt;
+function showToast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg; el.classList.add('show');
+    clearTimeout(_tt); _tt = setTimeout(() => el.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>
